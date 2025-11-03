@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/navigation_login">
+
+    <!-- 🔐 로그인 화면 -->
+    <fragment
+        android:id="@+id/navigation_login"
+        android:name="com.example.smartdoorlock.ui.login.LoginFragment"
+        android:label="로그인"
+        tools:layout="@layout/fragment_login" />
+
+    <!-- 회원가입창-->
+    <fragment
+        android:id="@+id/navigation_register"
+        android:name="com.example.smartdoorlock.ui.register.RegisterFragment"
+        android:label="회원가입"
+        tools:layout="@layout/fragment_register" />
+
+    <!-- 👤 프로필 -->
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.smartdoorlock.ui.profile.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <!-- 🔓 잠금/해제 -->
+    <fragment
+        android:id="@+id/navigation_dashboard"
+        android:name="com.example.smartdoorlock.ui.dashboard.DashboardFragment"
+        android:label="@string/title_dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <!-- 🧾 출입기록 -->
+    <fragment
+        android:id="@+id/navigation_notifications"
+        android:name="com.example.smartdoorlock.ui.notifications.NotificationsFragment"
+        android:label="@string/title_notifications"
+        tools:layout="@layout/fragment_notifications" />
+
+    <!-- ⚙ 설정 -->
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.smartdoorlock.ui.settings.SettingsFragment"
+        android:label="설정"
+        tools:layout="@layout/fragment_setting" />
+
+    <fragment
+        android:id="@+id/navigation_user_update"
+        android:name="com.example.smartdoorlock.ui.profile.UserUpdateFragment"
+        android:label="사용자 정보 수정"
+        tools:layout="@layout/fragment_user_update" />
+
+
+    <fragment
+        android:id="@+id/navigation_auth"
+        android:name="com.example.smartdoorlock.ui.settings.AuthFragment"
+        android:label="인증"
+        tools:layout="@layout/fragment_auth"/>
+
+    <fragment
+        android:id="@+id/navigation_auth_method"
+        android:name="com.example.smartdoorlock.ui.settings.AuthMethodFragment"
+        android:label="인증방식"
+        tools:layout="@layout/fragment_auth_method"/>
+
+    <fragment
+        android:id="@+id/navigation_detail_setting"
+        android:name="com.example.smartdoorlock.ui.settings.DetailSettingFragment"
+        android:label="상세설정"
+        tools:layout="@layout/fragment_detail_setting" />
+
+    <fragment
+        android:id="@+id/navigation_help"
+        android:name="com.example.smartdoorlock.ui.settings.HelpFragment"
+        android:label="도움말"
+        tools:layout="@layout/fragment_help"/>
+
+    <fragment
+        android:id="@+id/navigation_wifi_setting"
+        android:name="com.example.smartdoorlock.ui.setting.WifiSettingFragment"
+        android:label="도움말"
+        tools:layout="@layout/fragment_wifi_setting"/>
+
+
+</navigation>

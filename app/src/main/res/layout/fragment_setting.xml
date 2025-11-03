@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_setting"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    tools:context=".ui.setting.SettingFragment"
+    >
+
+    <!-- 상단 고정 박스 -->
+
+    <!-- 본문 영역 -->
+    <LinearLayout
+        android:id="@+id/settingContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <Button
+            android:id="@+id/buttonAuth"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="8dp"
+            android:text="인증"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+
+        <Button
+            android:id="@+id/buttonAuthMethod"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="8dp"
+            android:text="인증방식"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+
+        <Button
+            android:id="@+id/buttonDetailSetting"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="8dp"
+            android:text="상세설정"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+
+        <!-- [추가된 버튼] Wi-Fi 설정 버튼 -->
+        <Button
+            android:id="@+id/buttonWifiSetting"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="8dp"
+            android:text="Wi-Fi 설정"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+
+        <Button
+            android:id="@+id/buttonHelp"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="8dp"
+            android:text="도움말"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+    </LinearLayout>
+</LinearLayout>
+

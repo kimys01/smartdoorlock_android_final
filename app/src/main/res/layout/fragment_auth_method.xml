@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="인증 방식 선택"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#000000"/>
+
+    <RadioGroup
+        android:id="@+id/radioGroupAuthMethod"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="16dp">
+
+        <RadioButton
+            android:id="@+id/radioBle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BLE 인증"
+            android:textColor="#000000"/>
+
+        <RadioButton
+            android:id="@+id/radioRfid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RFID 인증"
+            android:textColor="#000000"/>
+
+        <RadioButton
+            android:id="@+id/radioPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="비밀번호 인증"
+            android:textColor="#000000"/>
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/buttonUpdateAuthMethod"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="인증 방식 저장"
+        android:layout_marginTop="8dp"/>
+
+
+</LinearLayout>

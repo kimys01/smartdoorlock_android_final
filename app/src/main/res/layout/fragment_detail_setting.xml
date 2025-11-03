@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFF">
+
+    <Switch
+        android:id="@+id/switchAutoLock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="자동 잠금 사용 (기본 5초)"
+        android:textColor="#000000"/>
+
+    <Switch
+        android:id="@+id/switchNotifyOnLock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="잠금 시 알림 보내기"
+        android:textColor="#000000"/>
+
+    <Button
+        android:id="@+id/buttonSaveDetailSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="상세 설정 저장" />
+</LinearLayout>

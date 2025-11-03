@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_wifi_setting"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    tools:context=".ui.setting.WifiSettingFragment"> <!-- .ui.setting.WifiSettingFragment 등으로 컨텍스트 변경 필요 -->
+
+    <!-- 상단 고정 박스 -->
+    <!-- (필요 시 상단 헤더 추가) -->
+
+    <!-- 본문 영역 -->
+    <LinearLayout
+        android:id="@+id/wifiContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="연결할 Wi-Fi 정보를 입력하세요."
+            android:textSize="32sp"
+            android:layout_marginBottom="32dp"
+            android:textColor="#000000"/> <!-- ✅ 글씨 색상 (검은색) 추가 -->
+
+        <!-- Wi-Fi 이름 (SSID) 입력 -->
+        <EditText
+            android:id="@+id/editTextSsid"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:hint="Wi-Fi 이름 (SSID)"
+            android:inputType="text"
+            android:textSize="32sp"
+            android:padding="16dp"
+            android:background="@drawable/edit_text_background"
+            android:layout_marginBottom="16dp"
+            android:textColorHint="#888888"
+            android:textColor="#888888"/> <!-- ✅ 힌트 및 글씨 색상 추가 -->
+
+        <!-- Wi-Fi 비밀번호 입력 -->
+        <EditText
+            android:id="@+id/editTextPassword"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:hint="Wi-Fi 비밀번호"
+            android:inputType="textPassword"
+            android:textSize="32sp"
+            android:padding="16dp"
+            android:background="@drawable/edit_text_background"
+            android:layout_marginBottom="32dp"
+            android:textColorHint="#888888"
+            android:textColor="#888888"/> <!-- ✅ 힌트 및 글씨 색상 추가 -->
+
+        <!-- 연결 버튼 -->
+        <Button
+            android:id="@+id/buttonConnectWifi"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:text="연결하기"
+            android:textSize="50sp"
+            android:backgroundTint="@color/login_button"/>
+
+        <!-- 연결 상태 표시 -->
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            tools:text="연결 중..."
+            android:textSize="30sp"
+            android:layout_marginTop="32dp"
+            android:textColor="#333333"/> <!-- ✅ 상태 글씨 색상 추가 -->
+
+    </LinearLayout>
+</LinearLayout>
+
