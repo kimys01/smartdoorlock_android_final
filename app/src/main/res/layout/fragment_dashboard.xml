@@ -8,19 +8,27 @@
     tools:context=".ui.dashboard.DashboardFragment"
     android:background="#FFFFFF">
 
-    <!-- 상단 헤더 -->
+    <!--  상단 헤더  -->
 
-    <!-- 버튼: 상태에 따라 텍스트가 바뀜 -->
-
-    <Button
+    <!--  버튼: 상태에 따라 텍스트가 바뀜  -->
+    <!--
+      [수정]
+      - android:background="@drawable/gradient_button_background" : 그라데이션 drawable을 배경으로 설정합니다.
+      - android:textColor="#FFFFFF" : 배경이 어두워졌으므로 텍스트 색상을 흰색으로 변경합니다.
+      - [해결] MaterialButton의 틴트(tint)가 그라데이션을 덮어쓰는 문제를 해결하기 위해
+        표준 <Button> 대신 <androidx.appcompat.widget.AppCompatButton>을 사용합니다.
+    -->
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/LockOpen"
         android:layout_width="350dp"
         android:layout_height="250dp"
         android:layout_gravity="center"
+        android:background="@drawable/gradient_button_background"
         android:text="잠금"
+        android:textColor="#FFFFFF"
         android:textSize="40dp" />
 
-    <!-- 상태 텍스트 -->
+    <!--  상태 텍스트  -->
     <TextView
         android:id="@+id/textLockStatus"
         android:layout_width="wrap_content"
@@ -29,9 +37,9 @@
         android:textSize="25dp"
         android:layout_marginTop="30dp"
         android:layout_marginLeft="30dp"
-        android:textColor="#888888"/>
+        android:textColor="#000000"/>
 
-    <!-- 위치 -->
+    <!--  위치  -->
     <TextView
         android:id="@+id/textUserLocation"
         android:layout_width="wrap_content"
@@ -40,9 +48,9 @@
         android:textSize="25dp"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="30dp"
-        android:textColor="#888888"/>
+        android:textColor="#000000"/>
 
-    <!-- 잠금 방식 -->
+    <!--  잠금 방식  -->
     <TextView
         android:id="@+id/textLockMethod"
         android:layout_width="wrap_content"
@@ -51,6 +59,5 @@
         android:textSize="25dp"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="30dp"
-        android:textColor="#888888"/>
-
+        android:textColor="#000000"/>
 </LinearLayout>

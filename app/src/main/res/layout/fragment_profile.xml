@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- [수정] app: 속성을 사용하기 위해 xmlns:app 네임스페이스 추가 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -8,9 +10,9 @@
     android:background="#FFFFFF"
     tools:context=".ui.profile.ProfileFragment">
 
-    <!-- ✅ 상단 고정 헤더 -->
+    <!--  ✅ 상단 고정 헤더  -->
 
-    <!-- ✅ 내용 스크롤 영역 -->
+    <!--  ✅ 내용 스크롤 영역  -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -23,7 +25,7 @@
             android:padding="24dp"
             android:gravity="center_horizontal">
 
-            <!-- 👤 프로필 이미지 공간 -->
+            <!--  👤 프로필 이미지 공간  -->
             <ImageView
                 android:id="@+id/imageProfile"
                 android:layout_width="120dp"
@@ -32,15 +34,14 @@
                 android:layout_marginBottom="24dp"
                 android:scaleType="centerCrop"
                 android:background="@drawable/circle_background"
-                android:contentDescription="프로필 이미지" />
+                android:contentDescription="프로필 이미지"/>
 
-            <!-- 아이디 -->
+            <!--  아이디  -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="20dp">
-
                 <TextView
                     android:id="@+id/textUserId"
                     android:layout_width="wrap_content"
@@ -50,13 +51,12 @@
                     android:textColor="#000000"/>
             </LinearLayout>
 
-            <!-- 이름 -->
+            <!--  이름  -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="10dp">
-
                 <TextView
                     android:id="@+id/textUserName"
                     android:layout_width="wrap_content"
@@ -66,27 +66,46 @@
                     android:textColor="#000000"/>
             </LinearLayout>
 
-            <!-- 비밀번호 변경 버튼 -->
-
-            <!-- 이름 수정 -->
-
-            <Button
+            <!--  비밀번호 변경 버튼 (이전 이름: 이름 수정) -->
+            <!--
+              [수정]
+              1. <Button> -> <androidx.appcompat.widget.AppCompatButton> (그라데이션 적용)
+              2. android:background="@drawable/gradient_button_background" (그라데이션 배경)
+              3. android:textColor="#FFFFFF" (흰색 텍스트)
+            -->
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/buttonEditProfile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="내 정보 수정"
+                android:background="@drawable/gradient_button_background"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp"/>
 
-
-            <!-- 로그아웃 버튼 -->
-            <Button
+            <!--  로그아웃 버튼  -->
+            <!--
+              [수정]
+              1. <Button> -> <androidx.appcompat.widget.AppCompatButton> (그라데이션 적용)
+              2. android:background="@drawable/gradient_button_background" (그라데이션 배경)
+              3. android:textColor="#FFFFFF" (흰색 텍스트)
+              4. android:layout_marginTop="8dp" (버튼 간 간격 추가)
+            -->
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/buttonLogout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="🚪 로그아웃"
-                android:layout_marginBottom="0dp" />
+                android:background="@drawable/gradient_button_background"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="0dp"/>
 
-            <!-- 계정 삭제 버튼 -->
+            <!--  계정 삭제 버튼 (수정: 둥근 모서리 추가) -->
+            <!--
+              [수정]
+              1. app:cornerRadius="12dp" 속성을 추가하여 모서리를 둥글게 만듭니다.
+                 (다른 버튼들의 12dp와 동일하게 맞춤)
+            -->
             <Button
                 android:id="@+id/buttonDeleteAccount"
                 android:layout_width="match_parent"
@@ -94,6 +113,7 @@
                 android:text="🗑 계정 삭제"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#D32F2F"
+                app:cornerRadius="12dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="40dp"/>
 

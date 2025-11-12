@@ -56,6 +56,7 @@ dependencies {
     //firebase
     implementation("com.google.firebase:firebase-database:20.3.0")
     implementation("com.google.firebase:firebase-auth:22.3.0")
+    implementation("com.google.firebase:firebase-auth-ktx")
 
     // ✅ Retrofit2
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

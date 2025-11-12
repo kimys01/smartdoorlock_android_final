@@ -9,9 +9,9 @@
     android:background="#FFFFFF"
     tools:context=".ui.login.LoginFragment">
 
-    <!-- 상단 고정 박스 -->
+    <!--  상단 고정 박스  -->
 
-    <!-- 본문 영역 -->
+    <!--  본문 영역  -->
     <LinearLayout
         android:id="@+id/loginContent"
         android:layout_width="match_parent"
@@ -29,7 +29,7 @@
             android:hint="아이디 입력"
             android:textColor="#000000"
             android:textColorHint="#888888"
-            android:inputType="text" />
+            android:inputType="text"/>
 
         <EditText
             android:id="@+id/editTextPassword"
@@ -39,23 +39,39 @@
             android:hint="패스워드 입력"
             android:textColor="#000000"
             android:textColorHint="#888888"
-            android:inputType="textPassword" />
+            android:inputType="textPassword"/>
 
-        <Button
+        <!--
+          [수정] 로그인 버튼
+          1. <Button> -> <androidx.appcompat.widget.AppCompatButton>
+          2. android:backgroundTint 삭제
+          3. android:background="@drawable/gradient_button_background" 추가
+          4. android:textColor="#FFFFFF" 추가
+        -->
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="로그인"
-            android:backgroundTint="@color/login_button" />
+            android:background="@drawable/gradient_button_background"
+            android:textColor="#FFFFFF"/>
 
-        <Button
+        <!--
+          [수정] 회원가입 버튼
+          1. <Button> -> <androidx.appcompat.widget.AppCompatButton>
+          2. android:backgroundTint 삭제
+          3. android:background="@drawable/gradient_button_background" 추가
+          4. android:textColor="#FFFFFF" 추가
+        -->
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonSignUp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="회원가입"
-            android:backgroundTint="@color/login_button" />
+            android:background="@drawable/gradient_button_background"
+            android:textColor="#FFFFFF"/>
 
         <CheckBox
             android:id="@+id/checkboxAutoLogin"
@@ -64,7 +80,8 @@
             android:layout_marginBottom="8dp"
             android:text="자동 로그인"
             android:checked="true"
-            android:textColor="#000000" /> <!-- 글자 색상 추가 -->
+            android:textColor="#000000"/>
+        <!--  글자 색상 추가  -->
 
         <CheckBox
             android:id="@+id/checkboxSaveId"
@@ -72,7 +89,7 @@
             android:layout_height="wrap_content"
             android:text="아이디 저장"
             android:layout_marginBottom="24dp"
-            android:textColor="#000000" /> <!-- 글자 색상 추가 -->
-
+            android:textColor="#000000"/>
+        <!--  글자 색상 추가  -->
     </LinearLayout>
 </LinearLayout>

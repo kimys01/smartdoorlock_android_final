@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+파일: res/drawable/gradient_actionbar_background.xml
+목적: 타이틀 바(액션바) 전용 그라데이션 배경을 정의합니다. (둥근 모서리 없음)
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!--
+    그라데이션을 정의합니다.
+    colors.xml의 'web_gradient_start'와 'web_gradient_end' 색상을 사용합니다.
+    -->
+    <gradient
+        android:startColor="@color/web_gradient_start"
+        android:endColor="@color/web_gradient_end"
+        android:angle="45"
+        android:type="linear" />
+
+    <!--
+    버튼과 달리 둥근 모서리(<corners>) 설정을 포함하지 않아,
+    기본 사각형(각진 모서리) 모양이 됩니다.
+    -->
+</shape>

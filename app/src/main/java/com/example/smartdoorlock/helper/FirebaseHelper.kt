@@ -1,5 +1,5 @@
 package com.example.smartdoorlock.helper
-
+import com.google.firebase.auth.FirebaseAuth
 import android.util.Log
 import com.example.smartdoorlock.data.DoorLockLog
 import com.google.firebase.database.FirebaseDatabase
