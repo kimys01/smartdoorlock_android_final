@@ -44,12 +44,19 @@
             android:textColor="#000000"/>
     </RadioGroup>
 
-    <Button
+    <!--
+      [수정] 인증 방식 저장 버튼
+      1. <Button> -> <androidx.appcompat.widget.AppCompatButton>
+      2. android:background="@drawable/gradient_button_background" 추가
+      3. android:textColor="#FFFFFF" 추가
+    -->
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/buttonUpdateAuthMethod"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="인증 방식 저장"
-        android:layout_marginTop="8dp"/>
-
+        android:layout_marginTop="8dp"
+        android:background="@drawable/gradient_button_background"
+        android:textColor="#FFFFFF"/>
 
 </LinearLayout>

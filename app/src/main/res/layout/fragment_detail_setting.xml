@@ -21,9 +21,15 @@
         android:text="잠금 시 알림 보내기"
         android:textColor="#000000"/>
 
-    <Button
+
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/buttonSaveDetailSettings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="상세 설정 저장" />
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/gradient_button_background"
+        android:text="상세 설정 저장"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp" />
+
 </LinearLayout>

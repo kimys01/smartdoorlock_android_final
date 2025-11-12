@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
-        <!-- 제목 -->
+        <!--  제목  -->
         <TextView
             android:id="@+id/text_auth_title"
             android:layout_width="wrap_content"
@@ -22,7 +22,7 @@
             android:layout_marginBottom="24dp"
             android:textColor="#000000"/>
 
-        <!-- 사용자 아이디 입력 -->
+        <!--  사용자 아이디 입력  -->
         <EditText
             android:id="@+id/editTextUserId"
             android:layout_width="match_parent"
@@ -32,7 +32,7 @@
             android:layout_marginBottom="16dp"
             android:textColor="#888888"/>
 
-        <!-- 비밀번호 입력 -->
+        <!--  비밀번호 입력  -->
         <EditText
             android:id="@+id/editTextPassword"
             android:layout_width="match_parent"
@@ -42,23 +42,29 @@
             android:layout_marginBottom="24dp"
             android:textColor="#888888"/>
 
-        <!-- 인증 요청 버튼 -->
-        <Button
+        <!--
+          [수정] 인증 요청 버튼
+          1. <Button> -> <androidx.appcompat.widget.AppCompatButton>
+          2. android:backgroundTint 삭제
+          3. android:background="@drawable/gradient_button_background" 추가
+          4. android:textColor="#FFFFFF" (유지)
+        -->
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonRequestAuth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="인증 요청"
-            android:backgroundTint="@color/purple_500"
+            android:background="@drawable/gradient_button_background"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"/>
 
-        <!-- 인증 상태 표시 -->
+        <!--  인증 상태 표시  -->
         <TextView
             android:id="@+id/textAuthStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="인증 상태: 대기 중"
             android:textColor="#888888"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"/>
     </LinearLayout>
 </ScrollView>
