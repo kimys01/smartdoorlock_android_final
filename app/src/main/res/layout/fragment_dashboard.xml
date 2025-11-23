@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".ui.dashboard.DashboardFragment"
+    android:paddingTop="20dp"
     android:background="#FFFFFF">
 
     <!--  상단 헤더  -->

@@ -44,26 +44,41 @@ class WifiSettingFragment : Fragment() {
         arguments?.getString("DEVICE_ADDRESS")?.let { targetDeviceAddress = it }
         viewModel = ViewModelProvider(this).get(WifiSettingViewModel::class.java)
 
-        // 시작 시 BLE 연결 시도
+        // 1. 화면 시작 시 연결 시도
         if (targetDeviceAddress.isNotEmpty()) {
             if (checkBlePermissions()) viewModel.connectToDevice(targetDeviceAddress)
             else requestBlePermissions.launch(getRequiredBlePermissions())
         }
 
-        // --- UI 관찰 ---
+        // 2. 상태 메시지 관찰
         viewModel.statusText.observe(viewLifecycleOwner) { status ->
             binding.textViewStatus.text = status
         }
 
+        // [핵심] 3. 블루투스 연결 상태 관찰 -> 버튼 활성/비활성화
+        viewModel.isBleConnected.observe(viewLifecycleOwner) { isConnected ->
+            if (isConnected) {
+                // 연결 성공 시: 버튼 활성화 및 안내 메시지
+                binding.buttonLoginApp.isEnabled = true
+                binding.buttonConnectWifi.isEnabled = true
+                // (옵션) 토스트 띄우기
+                // Toast.makeText(context, "연결 완료! 설정을 시작하세요.", Toast.LENGTH_SHORT).show()
+            } else {
+                // 연결 안 됨: 버튼 비활성화 (누르지 못하게 막음)
+                binding.buttonLoginApp.isEnabled = false
+                binding.buttonConnectWifi.isEnabled = false
+            }
+        }
+
+        // 4. 단계별 UI 전환
         viewModel.currentStep.observe(viewLifecycleOwner) { step ->
             updateUiStep(step)
-            // [추가] 2단계(와이파이)로 바로 넘어오면 SSID 자동 입력
             if (step == 2) fetchCurrentWifiSsid()
         }
 
         // --- 버튼 리스너 ---
 
-        // 1. 앱 로그인
+        // 앱 로그인 (연결된 상태에서만 동작)
         binding.buttonLoginApp.setOnClickListener {
             val id = binding.editTextUserId.text.toString().trim()
             val pw = binding.editTextUserPw.text.toString().trim()
@@ -71,7 +86,7 @@ class WifiSettingFragment : Fragment() {
             else Toast.makeText(context, "정보를 입력하세요", Toast.LENGTH_SHORT).show()
         }
 
-        // 2. 와이파이 설정 (중간 PIN 인증 과정 삭제됨)
+        // 와이파이 설정 (연결된 상태에서만 동작)
         binding.buttonConnectWifi.setOnClickListener {
             val ssid = binding.editTextSsid.text.toString()
             val pw = binding.editTextPassword.text.toString()
@@ -97,7 +112,7 @@ class WifiSettingFragment : Fragment() {
 
         when (step) {
             0 -> binding.layoutLoginSection.visibility = View.VISIBLE
-            2 -> binding.layoutWifiSection.visibility = View.VISIBLE // 바로 2단계로
+            2 -> binding.layoutWifiSection.visibility = View.VISIBLE
         }
     }
 
