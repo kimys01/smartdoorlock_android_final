@@ -17,12 +17,23 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.smartdoorlock.databinding.ActivityMainBinding
 import com.example.smartdoorlock.service.LocationService
+import com.example.smartdoorlock.service.UwbServiceManager // [추가] UWB 매니저
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+
+    // [추가] UWB 매니저 및 Firebase 인스턴스
+    private lateinit var uwbManager: UwbServiceManager
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance()
 
     private val REQUEST_LOCATION_PERMISSIONS = 1001
 
@@ -45,8 +56,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // [추가] UWB 매니저 초기화
+        uwbManager = UwbServiceManager(this)
+        uwbManager.init()
+
         supportActionBar?.let { actionBar ->
-            // 'gradient_button_background' 대신 'gradient_actionbar_background'를 사용합니다.
             val gradient = ContextCompat.getDrawable(this, R.drawable.gradient_actionbar_background)
             actionBar.setBackgroundDrawable(gradient)
         }
@@ -62,12 +76,11 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_notifications,
                 R.id.navigation_settings,
                 R.id.navigation_login,
-                R.id.deviceScanFragment,   // '디바이스 연결' 화면 ID
-                R.id.navigation_auth_method,      // '인증방식' 화면 ID
-                R.id.navigation_detail_setting,   // '상세설정' 화면 ID
-                R.id.wifiSettingFragment,             // 'WI-FI 설정' 화면 ID
-                R.id.navigation_help              // '도움말' 화면 ID
-
+                R.id.deviceScanFragment,
+                R.id.navigation_auth_method,
+                R.id.navigation_detail_setting,
+                R.id.wifiSettingFragment,
+                R.id.navigation_help
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
@@ -75,25 +88,22 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = binding.navView
         navView.setupWithNavController(navController)
 
-        // --- [추가된 블록 시작] ---
-        // NavController가 화면을 변경할 때마다 감지하는 리스너를 추가합니다.
-        // 로그인 화면에서는 하단 네비게이션 바를 숨기기 위함입니다.
+        // 화면 전환 리스너
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                // mobile_navigation.xml에 정의된 LoginFragment의 ID입니다.
                 R.id.navigation_login -> {
-                    navView.visibility = View.GONE // 하단 바 숨기기
+                    navView.visibility = View.GONE
                 }
-                // (선택 사항) 회원가입 등 추가로 숨길 화면이 있다면 여기에 추가
-                // R.id.navigation_signup -> {
-                //     navView.visibility = View.GONE
-                // }
+                R.id.navigation_register -> { // 회원가입도 숨김 처리 (선택)
+                    navView.visibility = View.GONE
+                }
                 else -> {
-                    navView.visibility = View.VISIBLE // 그 외 모든 화면에서 하단 바 보이기
+                    navView.visibility = View.VISIBLE
+                    // [추가] 로그인 후 메인 화면 진입 시 인증 모드 감시 시작
+                    if (auth.currentUser != null) observeAuthMethod()
                 }
             }
         }
-        // --- [추가된 블록 끝] ---
 
         // 위치 권한 확인 및 요청
         if (!hasLocationPermissions()) {
@@ -101,10 +111,45 @@ class MainActivity : AppCompatActivity() {
         } else {
             startLocationTrackingService()
         }
+
         // 앱 최초 실행 시 로그인 화면으로 이동
         if (savedInstanceState == null) {
             navController.navigate(R.id.navigation_login)
         }
+
+        // [추가] 이미 로그인된 상태라면 감시 시작
+        if (auth.currentUser != null) {
+            observeAuthMethod()
+        }
+    }
+
+    // [추가] Firebase DB의 인증 방식(authMethod) 감시
+    private fun observeAuthMethod() {
+        val uid = auth.currentUser?.uid ?: return
+        val authRef = database.getReference("users").child(uid).child("authMethod")
+
+        authRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val method = snapshot.getValue(String::class.java) ?: "BLE"
+                Log.d("AuthMonitor", "인증 모드 변경 감지: $method")
+
+                // 모드에 따라 UWB 켜고 끄기
+                when (method) {
+                    "UWB" -> {
+                        Log.i("AuthMonitor", "UWB 모드 활성화")
+                        uwbManager.startRanging()
+                    }
+                    else -> {
+                        Log.i("AuthMonitor", "UWB 모드 비활성화 (현재: $method)")
+                        uwbManager.stopRanging()
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("AuthMonitor", "DB 읽기 오류", error.toException())
+            }
+        })
     }
 
     private fun hasLocationPermissions(): Boolean {
@@ -133,7 +178,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_LOCATION_PERMISSIONS) {
             val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
 
-            // 💡 수정된 부분
             (permissions zip grantResults.toTypedArray()).forEach { (permission, result) ->
                 Log.d("PermissionResult", "$permission: ${if (result == PackageManager.PERMISSION_GRANTED) "Granted" else "Denied"}")
             }
@@ -144,5 +188,11 @@ class MainActivity : AppCompatActivity() {
                 Log.w("MainActivity", "❌ 일부 위치 권한 거부됨 → 서비스 시작하지 않음")
             }
         }
+    }
+
+    // [추가] 앱 종료 시 UWB 중지
+    override fun onDestroy() {
+        super.onDestroy()
+        uwbManager.stopRanging()
     }
 }
