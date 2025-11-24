@@ -4,9 +4,10 @@ import android.content.Context
 import android.util.Log
 import androidx.core.uwb.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 class UwbServiceManager(private val context: Context) {
 
@@ -14,66 +15,53 @@ class UwbServiceManager(private val context: Context) {
     private var uwbJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    // 도어락의 UWB 주소 (하드웨어와 약속된 주소)
-    private val deviceAddress = UwbAddress(byteArrayOf(0x12, 0x34))
+    private val frontAddress = UwbAddress(byteArrayOf(0x12, 0x34))
+    private val backAddress = UwbAddress(byteArrayOf(0x56, 0x78))
+
+    private var distFront: Double? = null
+    private var distBack: Double? = null
+
+    private var lastLogTime: Long = 0
+    private val LOG_INTERVAL = 5000L // 5초
+
+    var onLogUpdate: ((Double, Double) -> Unit)? = null
+    var onUnlockRangeEntered: (() -> Unit)? = null
 
     fun init() {
         if (uwbManager == null) {
             try {
                 uwbManager = UwbManager.createInstance(context)
             } catch (e: Exception) {
-                Log.e("UWB", "이 기기는 UWB를 지원하지 않습니다.", e)
+                Log.e("UWB", "UWB 미지원 기기", e)
             }
         }
     }
 
     fun startRanging() {
-        if (uwbManager == null) {
-            Log.w("UWB", "UWB 매니저가 초기화되지 않았거나 지원하지 않음.")
-            return
-        }
-        if (uwbJob?.isActive == true) return
+        if (uwbManager == null || uwbJob?.isActive == true) return
 
         Log.d("UWB", "🚀 UWB 거리 측정 시작")
+        lastLogTime = 0
 
         uwbJob = scope.launch {
             try {
                 val sessionScope = uwbManager!!.controllerSessionScope()
-
-                // 2. 설정 파라미터
                 val complexChannel = UwbComplexChannel(channel = 9, preambleIndex = 10)
+                val peerDevices = listOf(UwbDevice(frontAddress), UwbDevice(backAddress))
 
-                // [수정 1] UwbDevice 객체로 래핑
-                val peerDevices = listOf(UwbDevice(deviceAddress))
-
-                // [수정 2] 최신 API에 맞춘 파라미터 (CONFIG_ID 변경, subSession 추가)
                 val params = RangingParameters(
-                    uwbConfigType = RangingParameters.CONFIG_UNICAST_DS_TWR, // 이름 변경됨
+                    uwbConfigType = RangingParameters.CONFIG_UNICAST_DS_TWR,
                     sessionId = 12345,
-                    subSessionId = 0, // [추가] 서브 세션 ID (미사용 시 0)
+                    subSessionId = 0,
                     sessionKeyInfo = null,
-                    subSessionKeyInfo = null, // [추가] 서브 세션 키 (미사용 시 null)
+                    subSessionKeyInfo = null,
                     complexChannel = complexChannel,
-                    peerDevices = peerDevices, // List<UwbDevice> 타입
+                    peerDevices = peerDevices,
                     updateRateType = RangingParameters.RANGING_UPDATE_RATE_FREQUENT
                 )
 
-                // 3. 거리 측정
                 sessionScope.prepareSession(params).collect { result ->
-                    when (result) {
-                        is RangingResult.RangingResultPosition -> {
-                            val distance = result.position.distance
-                            distance?.let {
-                                Log.d("UWB", "📏 거리: ${it.value}m")
-                                if (it.value < 1.0) {
-                                    Log.i("UWB", "🚪 문 열림 신호 전송!")
-                                }
-                            }
-                        }
-                        is RangingResult.RangingResultPeerDisconnected -> {
-                            Log.d("UWB", "연결 끊김")
-                        }
-                    }
+                    processRangingResult(result)
                 }
             } catch (e: Exception) {
                 Log.e("UWB", "Ranging 오류: ${e.message}", e)
@@ -81,11 +69,56 @@ class UwbServiceManager(private val context: Context) {
         }
     }
 
+    private fun processRangingResult(result: RangingResult) {
+        when (result) {
+            is RangingResult.RangingResultPosition -> {
+                val distance = result.position.distance?.value?.toDouble() ?: return
+                val address = result.device.address
+
+                if (address == frontAddress) distFront = distance
+                else if (address == backAddress) distBack = distance
+
+                if (distFront != null && distBack != null) {
+                    checkPositionAndUnlock()
+
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastLogTime >= LOG_INTERVAL) {
+                        onLogUpdate?.invoke(distFront!!, distBack!!)
+                        lastLogTime = currentTime
+                    }
+                }
+            }
+            is RangingResult.RangingResultPeerDisconnected -> {
+                Log.d("UWB", "장치 연결 끊김")
+            }
+        }
+    }
+
+    private fun checkPositionAndUnlock() {
+        val front = distFront ?: return
+        val back = distBack ?: return
+
+        if (front < back) {
+            if (front <= 3.0) {
+                Log.i("UWB", "🔓 실외 3m 진입 (앞:$front < 뒤:$back)")
+                onUnlockRangeEntered?.invoke()
+                stopRanging()
+                resetDistances()
+            }
+        }
+    }
+
+    private fun resetDistances() {
+        distFront = null
+        distBack = null
+    }
+
     fun stopRanging() {
         if (uwbJob?.isActive == true) {
             Log.d("UWB", "🛑 UWB 거리 측정 중지")
             uwbJob?.cancel()
             uwbJob = null
+            resetDistances()
         }
     }
 }

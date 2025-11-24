@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.example.smartdoorlock.data.AuthLog
+import com.example.smartdoorlock.data.AppLogItem
 import com.example.smartdoorlock.databinding.FragmentAuthMethodBinding
 import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
@@ -27,14 +27,10 @@ class AuthMethodFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // [핵심 변경] Auth UID 대신 저장된 아이디 사용
         val prefs = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
         val userId = prefs.getString("saved_id", null)
 
-        if (userId == null) {
-            Toast.makeText(context, "로그인 정보가 없습니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        if (userId == null) return
 
         val userRef = database.getReference("users").child(userId)
 
@@ -59,30 +55,26 @@ class AuthMethodFragment : Fragment() {
                 else -> ""
             }
 
-            if (newMethod.isEmpty()) {
-                Toast.makeText(context, "인증 방식을 선택하세요", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+            if (newMethod.isEmpty()) return@setOnClickListener
 
             userRef.child("authMethod").get().addOnSuccessListener { snapshot ->
                 val currentMethod = snapshot.getValue(String::class.java) ?: "None"
 
                 if (currentMethod == newMethod) {
-                    Toast.makeText(context, "변경 사항이 없습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "변경 사항 없음", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
 
                 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                val log = AuthLog(new_auth = "$currentMethod->$newMethod", timestamp = timestamp)
 
-                val updates = mapOf<String, Any>(
-                    "authMethod" to newMethod,
-                    "app_logs/change/auth" to log
-                )
+                // [핵심] 로그 리스트 추가
+                val logMessage = "인증방식 변경: $currentMethod->$newMethod"
+                val logItem = AppLogItem(message = logMessage, timestamp = timestamp)
 
-                userRef.updateChildren(updates)
+                userRef.child("authMethod").setValue(newMethod)
+                userRef.child("app_logs").push().setValue(logItem)
                     .addOnSuccessListener {
-                        Toast.makeText(context, "인증 방식이 변경되었습니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "인증 방식 변경 완료", Toast.LENGTH_SHORT).show()
                     }
             }
         }

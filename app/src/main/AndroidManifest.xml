@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.smartdoorlock">
 
-    <!-- 기존 권한 유지 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
@@ -15,8 +14,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-    <!-- [추가] 데이터 동기화 포그라운드 서비스 권한 (Android 14+) -->
+    <!-- [추가] 데이터 동기화 포그라운드 서비스 권한 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
@@ -37,14 +35,12 @@
             </intent-filter>
         </activity>
 
-        <!-- 위치 서비스 -->
         <service
             android:name=".service.LocationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- [추가] 알림 서비스 등록 -->
         <service
             android:name=".service.NotificationService"
             android:enabled="true"

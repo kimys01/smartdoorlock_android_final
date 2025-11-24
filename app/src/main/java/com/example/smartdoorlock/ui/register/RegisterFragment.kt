@@ -7,14 +7,15 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.example.smartdoorlock.R
 import com.example.smartdoorlock.data.*
 import com.example.smartdoorlock.databinding.FragmentRegisterBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest // [필수] 프로필 업데이트용
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.*
-import com.example.smartdoorlock.R
+import kotlin.collections.HashMap
 
 class RegisterFragment : Fragment() {
 
@@ -51,6 +52,7 @@ class RegisterFragment : Fragment() {
 
     private fun registerUser(username: String, password: String, name: String) {
         binding.buttonRegister.isEnabled = false
+        // 일반 아이디를 이메일 형식으로 변환
         val fakeEmail = if(username.contains("@")) username else "$username@doorlock.com"
 
         auth.createUserWithEmailAndPassword(fakeEmail, password)
@@ -59,20 +61,11 @@ class RegisterFragment : Fragment() {
                 val uid = user?.uid
 
                 if (uid != null) {
-                    // [핵심 수정] Firebase Auth 프로필에도 이름(DisplayName) 저장
-                    // 웹페이지에서 user.displayName으로 이름을 불러올 수 있게 됨
-                    val profileUpdates = UserProfileChangeRequest.Builder()
-                        .setDisplayName(name)
-                        .build()
-
-                    user.updateProfile(profileUpdates).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            // 프로필 업데이트 후 DB 저장 진행
-                            saveFullUserStructure(username, password, name)
-                        } else {
-                            // 실패하더라도 DB 저장은 시도
-                            saveFullUserStructure(username, password, name)
-                        }
+                    // 프로필 업데이트
+                    val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
+                    user.updateProfile(profileUpdates).addOnCompleteListener {
+                        // DB 초기 데이터 생성
+                        saveFullUserStructure(username, password, name)
                     }
                 }
             }
@@ -85,19 +78,17 @@ class RegisterFragment : Fragment() {
     private fun saveFullUserStructure(username: String, password: String, name: String) {
         val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
-        val initialLogs = AppLogs(
-            change = ChangeLogs(
-                auth = AuthLog("Initial: BLE", currentTime),
-                name = NameLog("Initial: $name", currentTime),
-                password = PasswordLog("Initial Set", currentTime),
-                detail = DetailLog("Initial Set", currentTime)
-            )
-        )
+        // 1. 초기 로그 생성 (리스트 형태를 위해 HashMap 사용)
+        val initialLogs = HashMap<String, AppLogItem>()
+        val logKey = database.reference.push().key ?: "init_log"
+        initialLogs[logKey] = AppLogItem("계정 생성: Initial Set", currentTime)
 
+        // 2. 도어락 초기 상태
         val initialDoorlock = UserDoorlock(
             status = DoorlockStatus(true, "INIT", currentTime, "LOCK")
         )
 
+        // 3. 전체 유저 모델 생성
         val newUser = User(
             username = username,
             password = password,
@@ -105,10 +96,13 @@ class RegisterFragment : Fragment() {
             authMethod = "BLE",
             detailSettings = DetailSettings(true, 5, true),
             app_logs = initialLogs,
-            doorlock = initialDoorlock
+            doorlock = initialDoorlock,
+            // uwb_logs, location_logs는 빈 HashMap으로 시작
+            uwb_logs = HashMap(),
+            location_logs = HashMap()
         )
 
-        // ID를 키로 사용하여 저장
+        // 4. DB 저장 (username을 키로 사용)
         database.getReference("users").child(username).setValue(newUser)
             .addOnSuccessListener {
                 Toast.makeText(context, "회원가입 완료!", Toast.LENGTH_SHORT).show()
