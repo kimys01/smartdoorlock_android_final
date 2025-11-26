@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -18,7 +17,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.smartdoorlock.databinding.ActivityMainBinding
 import com.example.smartdoorlock.service.LocationService
 import com.example.smartdoorlock.service.UwbServiceManager
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -36,7 +34,6 @@ class MainActivity : AppCompatActivity() {
 
     private val REQUEST_ALL_PERMISSIONS = 1001
 
-    // 필요한 모든 권한 정의
     private val REQUIRED_PERMISSIONS = mutableListOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -60,17 +57,14 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 1. UWB 초기화
         uwbManager = UwbServiceManager(this)
         uwbManager.init()
 
-        // 2. 액션바 설정
         supportActionBar?.let {
             val gradient = ContextCompat.getDrawable(this, R.drawable.gradient_actionbar_background)
             it.setBackgroundDrawable(gradient)
         }
 
-        // 3. 네비게이션 설정
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment_activity_main) as NavHostFragment
         navController = navHostFragment.navController
@@ -84,43 +78,38 @@ class MainActivity : AppCompatActivity() {
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
-
-        // [핵심 수정] BottomNavigationView와 NavController 연동
-        // setupWithNavController는 탭 재선택 시 스택을 자동으로 초기화해줍니다.
         binding.navView.setupWithNavController(navController)
 
-        // 4. 화면 전환 리스너 (하단바 숨김 처리)
+        // [수정] 화면 전환 시 UI 제어
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.navigation_login, R.id.navigation_register -> {
+                // 로그인, 회원가입, 비밀번호 찾기 화면에서는 상단/하단 바 숨김
+                R.id.navigation_login,
+                R.id.navigation_register,
+                R.id.findPasswordFragment -> {
                     binding.navView.visibility = View.GONE
-                    supportActionBar?.hide() // 로그인 화면에선 상단바도 숨김
+                    supportActionBar?.hide()
                 }
                 else -> {
                     binding.navView.visibility = View.VISIBLE
                     supportActionBar?.show()
 
-                    // 로그인 상태라면 인증 모드 감시 시작
                     if (auth.currentUser != null) observeAuthMethod()
                 }
             }
         }
 
-        // 5. [핵심 수정] 권한 요청 (앱 시작 시 즉시 실행)
         if (!hasAllPermissions()) {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_ALL_PERMISSIONS)
         } else {
             startLocationTrackingService()
         }
 
-        // 6. 로그인 상태 체크
         if (auth.currentUser == null) {
-            // 로그인이 안 되어 있으면 로그인 화면으로 (스택 문제 방지)
             navController.navigate(R.id.navigation_login)
         }
     }
 
-    // DB 감시 (중복 방지 적용)
     private fun observeAuthMethod() {
         if (authListener != null) return
         val uid = auth.currentUser?.uid ?: return
@@ -157,8 +146,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_ALL_PERMISSIONS) {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 startLocationTrackingService()
-            } else {
-                // 권한 거부 시 처리 (토스트 메시지 등)
             }
         }
     }
@@ -172,7 +159,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 뒤로가기 버튼 처리 (네비게이션 지원)
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }

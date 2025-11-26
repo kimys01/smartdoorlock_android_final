@@ -5,20 +5,7 @@
     android:orientation="vertical"
     android:background="#F5F5F5">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:padding="24dp"
-        android:elevation="4dp">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="출입 기록"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#000000"/>
-    </LinearLayout>
+    <!-- [삭제됨] 상단 헤더 영역 (출입 기록 타이틀) -->
 
     <TextView
         android:id="@+id/txtNoData"

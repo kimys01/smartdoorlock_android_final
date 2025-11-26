@@ -27,9 +27,12 @@ class WifiSettingFragment : Fragment() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (permissions.entries.all { it.value }) {
-            viewModel.connectToDevice(targetDeviceAddress)
+            // 권한 허용됨, 연결 시도
+            if (targetDeviceAddress.isNotEmpty()) {
+                viewModel.connectToDevice(targetDeviceAddress)
+            }
         } else {
-            Toast.makeText(requireContext(), "권한 필요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "블루투스 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -41,92 +44,92 @@ class WifiSettingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 이전 화면(스캔 화면)에서 넘겨준 주소 받기
         arguments?.getString("DEVICE_ADDRESS")?.let { targetDeviceAddress = it }
-        viewModel = ViewModelProvider(this).get(WifiSettingViewModel::class.java)
 
-        // 1. 화면 시작 시 연결 시도
+        viewModel = ViewModelProvider(this)[WifiSettingViewModel::class.java]
+
+        // 1. 화면 시작 시 연결 시도 (주소가 있을 경우에만)
         if (targetDeviceAddress.isNotEmpty()) {
-            if (checkBlePermissions()) viewModel.connectToDevice(targetDeviceAddress)
-            else requestBlePermissions.launch(getRequiredBlePermissions())
+            if (checkBlePermissions()) {
+                viewModel.connectToDevice(targetDeviceAddress)
+            } else {
+                requestBlePermissions.launch(getRequiredBlePermissions())
+            }
+        } else {
+            binding.textViewStatus.text = "기기 정보가 없습니다. 다시 스캔해주세요."
         }
 
-        // 2. 상태 메시지 관찰
+        // 2. ViewModel 관찰
         viewModel.statusText.observe(viewLifecycleOwner) { status ->
             binding.textViewStatus.text = status
         }
 
-        // [핵심] 3. 블루투스 연결 상태 관찰 -> 버튼 활성/비활성화
         viewModel.isBleConnected.observe(viewLifecycleOwner) { isConnected ->
-            if (isConnected) {
-                // 연결 성공 시: 버튼 활성화 및 안내 메시지
-                binding.buttonLoginApp.isEnabled = true
-                binding.buttonConnectWifi.isEnabled = true
-                // (옵션) 토스트 띄우기
-                // Toast.makeText(context, "연결 완료! 설정을 시작하세요.", Toast.LENGTH_SHORT).show()
-            } else {
-                // 연결 안 됨: 버튼 비활성화 (누르지 못하게 막음)
-                binding.buttonLoginApp.isEnabled = false
-                binding.buttonConnectWifi.isEnabled = false
-            }
+            binding.buttonLoginApp.isEnabled = isConnected
+            binding.buttonConnectWifi.isEnabled = isConnected
         }
 
-        // 4. 단계별 UI 전환
         viewModel.currentStep.observe(viewLifecycleOwner) { step ->
             updateUiStep(step)
             if (step == 2) fetchCurrentWifiSsid()
         }
 
-        // --- 버튼 리스너 ---
-
-        // 앱 로그인 (연결된 상태에서만 동작)
+        // 3. 버튼 리스너
         binding.buttonLoginApp.setOnClickListener {
             val id = binding.editTextUserId.text.toString().trim()
             val pw = binding.editTextUserPw.text.toString().trim()
             if (id.isNotEmpty() && pw.isNotEmpty()) viewModel.verifyAppAdmin(id, pw)
-            else Toast.makeText(context, "정보를 입력하세요", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(context, "아이디와 비밀번호를 입력하세요", Toast.LENGTH_SHORT).show()
         }
 
-        // 와이파이 설정 (연결된 상태에서만 동작)
         binding.buttonConnectWifi.setOnClickListener {
             val ssid = binding.editTextSsid.text.toString()
             val pw = binding.editTextPassword.text.toString()
             if (ssid.isNotEmpty() && pw.isNotEmpty()) viewModel.sendWifiSettings(ssid, pw)
-            else Toast.makeText(context, "입력 필요", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(context, "Wi-Fi 정보를 입력하세요", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun fetchCurrentWifiSsid() {
         try {
             if (binding.editTextSsid.text.toString().isNotEmpty()) return
-            val wifiManager = requireContext().applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val info = wifiManager.connectionInfo
+            val wifiManager = requireContext().applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val info = wifiManager?.connectionInfo
             if (info != null && info.ssid != null && info.ssid != "<unknown ssid>") {
-                binding.editTextSsid.setText(info.ssid.replace("\"", ""))
+                // 따옴표 제거 로직
+                val ssid = info.ssid.replace("\"", "")
+                binding.editTextSsid.setText(ssid)
             }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun updateUiStep(step: Int) {
-        binding.layoutLoginSection.visibility = View.GONE
-        binding.layoutWifiSection.visibility = View.GONE
-
-        when (step) {
-            0 -> binding.layoutLoginSection.visibility = View.VISIBLE
-            2 -> binding.layoutWifiSection.visibility = View.VISIBLE
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
+    private fun updateUiStep(step: Int) {
+        binding.layoutLoginSection.visibility = if (step == 0) View.VISIBLE else View.GONE
+        binding.layoutWifiSection.visibility = if (step == 2) View.VISIBLE else View.GONE
+    }
+
     private fun checkBlePermissions(): Boolean {
+        val context = context ?: return false
         return getRequiredBlePermissions().all {
-            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
     private fun getRequiredBlePermissions(): Array<String> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.ACCESS_FINE_LOCATION)
+            arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
         } else {
-            arrayOf(Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION)
+            arrayOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
         }
     }
 
@@ -137,6 +140,7 @@ class WifiSettingFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
+        // 화면 벗어나면 연결 해제 (배터리 절약 및 안정성)
         viewModel.disconnect()
     }
 }

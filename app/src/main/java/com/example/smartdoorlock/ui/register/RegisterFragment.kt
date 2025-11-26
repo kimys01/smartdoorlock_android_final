@@ -15,6 +15,7 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.collections.HashMap
 
 class RegisterFragment : Fragment() {
@@ -38,8 +39,23 @@ class RegisterFragment : Fragment() {
             val pw = binding.editTextPassword.text.toString().trim()
             val name = binding.editTextName.text.toString().trim()
 
-            if (id.isEmpty() || pw.isEmpty() || name.isEmpty()) return@setOnClickListener
-            if (pw.length < 6) return@setOnClickListener
+            // 1. 빈 값 체크
+            if (id.isEmpty() || pw.isEmpty() || name.isEmpty()) {
+                Toast.makeText(context, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 2. 아이디 유효성 검사 (영어, 숫자만 허용)
+            if (!Pattern.matches("^[a-zA-Z0-9]*$", id)) {
+                Toast.makeText(context, "아이디는 영어와 숫자만 사용할 수 있습니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 3. 비밀번호 길이 체크
+            if (pw.length < 6) {
+                Toast.makeText(context, "비밀번호는 6자리 이상이어야 합니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             registerUser(id, pw, name)
         }
@@ -47,7 +63,9 @@ class RegisterFragment : Fragment() {
 
     private fun registerUser(username: String, password: String, name: String) {
         binding.buttonRegister.isEnabled = false
-        val fakeEmail = if(username.contains("@")) username else "$username@doorlock.com"
+
+        // 아이디를 이메일 형식으로 변환 (Firebase Auth 요구사항)
+        val fakeEmail = "$username@doorlock.com"
 
         auth.createUserWithEmailAndPassword(fakeEmail, password)
             .addOnSuccessListener { authResult ->
@@ -63,14 +81,19 @@ class RegisterFragment : Fragment() {
             }
             .addOnFailureListener { e ->
                 binding.buttonRegister.isEnabled = true
-                Toast.makeText(context, "가입 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                // 에러 메시지 한국어 변환 (선택 사항)
+                val errorMsg = when {
+                    e.message?.contains("email") == true -> "이미 사용 중인 아이디입니다."
+                    else -> "가입 실패: ${e.message}"
+                }
+                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun saveFullUserStructure(username: String, password: String, name: String) {
         val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
-        // [수정] 초기 로그 생성 (change 없이 바로 리스트에 추가)
+        // 초기 로그 생성
         val initialLogs = HashMap<String, AppLogItem>()
         val logKey = database.reference.push().key ?: "init_log"
         initialLogs[logKey] = AppLogItem("계정 생성: Initial Set", currentTime)
@@ -85,7 +108,7 @@ class RegisterFragment : Fragment() {
             name = name,
             authMethod = "BLE",
             detailSettings = DetailSettings(true, 5, true),
-            app_logs = initialLogs, // 단순화된 로그 구조 적용
+            app_logs = initialLogs,
             doorlock = initialDoorlock,
             uwb_logs = HashMap(),
             location_logs = HashMap()

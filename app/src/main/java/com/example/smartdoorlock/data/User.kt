@@ -12,6 +12,9 @@ data class User(
     val name: String = "",
     val authMethod: String = "BLE",
 
+    // [추가] 비밀번호 찾기용 휴대폰 번호
+    val phoneNumber: String = "",
+
     // [도어락 상태 및 로그] (개인용 로그 저장소)
     val doorlock: UserDoorlock = UserDoorlock(),
 

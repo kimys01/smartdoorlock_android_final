@@ -19,11 +19,6 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!--
-          [SD 로고 텍스트]
-          기본 색상은 보라색(#7C3AED)으로 지정해 두었습니다.
-          실제 그라데이션은 Java/Kotlin 코드에서 적용됩니다.
-        -->
         <TextView
             android:id="@+id/textLogo"
             android:layout_width="wrap_content"
@@ -66,7 +61,7 @@
             android:textColorHint="#888888"
             android:inputType="textPassword"/>
 
-        <!-- 로그인 버튼 (그라데이션 배경) -->
+        <!-- 로그인 버튼 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonLogin"
             android:layout_width="match_parent"
@@ -113,6 +108,21 @@
                 android:text="아이디 저장"
                 android:textColor="#555555"
                 android:textSize="14sp"/>
+
+            <!-- [추가] 비밀번호 찾기 링크 -->
+            <TextView
+                android:id="@+id/textFindPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="비밀번호를 잊으셨나요?"
+                android:textSize="14sp"
+                android:textColor="#2196F3"
+                android:textStyle="bold"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"/>
         </LinearLayout>
 
     </LinearLayout>

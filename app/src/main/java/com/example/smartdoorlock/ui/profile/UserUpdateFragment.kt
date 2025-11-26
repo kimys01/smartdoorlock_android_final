@@ -9,13 +9,13 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.Glide // Glide 추가
+import com.bumptech.glide.Glide
 import com.example.smartdoorlock.data.AppLogItem
 import com.example.smartdoorlock.databinding.FragmentUserUpdateBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage // Storage 추가
+import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -57,7 +57,7 @@ class UserUpdateFragment : Fragment() {
             pickImageLauncher.launch("image/*") // 갤러리 열기
         }
 
-        // [2] 이름 변경 (기존 유지)
+        // [2] 이름 변경
         binding.buttonUpdateName.setOnClickListener {
             val newName = binding.editTextNewName.text.toString().trim()
             if (newName.isEmpty()) return@setOnClickListener
@@ -76,12 +76,14 @@ class UserUpdateFragment : Fragment() {
                 auth.currentUser?.updateProfile(profileUpdates)?.addOnCompleteListener {
                     prefs.edit().putString("user_name", newName).apply()
                     Toast.makeText(context, "이름 변경 완료", Toast.LENGTH_SHORT).show()
-                    binding.editTextNewName.text.clear()
+
+                    // [수정] Nullable 타입 처리 (?.) 추가
+                    binding.editTextNewName.text?.clear()
                 }
             }
         }
 
-        // [3] 비밀번호 변경 (기존 유지)
+        // [3] 비밀번호 변경
         binding.buttonUpdatePassword.setOnClickListener {
             val currentPw = binding.editTextCurrentPassword.text.toString().trim()
             val newPw = binding.editTextNewPassword.text.toString().trim()
@@ -99,8 +101,10 @@ class UserUpdateFragment : Fragment() {
 
                     auth.currentUser?.updatePassword(newPw)?.addOnSuccessListener {
                         Toast.makeText(context, "비밀번호 변경 완료", Toast.LENGTH_SHORT).show()
-                        binding.editTextCurrentPassword.text.clear()
-                        binding.editTextNewPassword.text.clear()
+
+                        // [수정] Nullable 타입 처리 (?.) 추가
+                        binding.editTextCurrentPassword.text?.clear()
+                        binding.editTextNewPassword.text?.clear()
                     }
                 } else {
                     Toast.makeText(context, "현재 비밀번호 불일치", Toast.LENGTH_SHORT).show()
@@ -109,7 +113,7 @@ class UserUpdateFragment : Fragment() {
         }
     }
 
-    // [핵심] 이미지 업로드 및 URL 저장 로직
+    // 이미지 업로드 및 URL 저장 로직
     private fun uploadProfileImage(uri: Uri) {
         val uid = auth.currentUser?.uid ?: return
         val userId = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE).getString("saved_id", "") ?: ""

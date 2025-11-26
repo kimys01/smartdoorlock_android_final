@@ -4,9 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.core.uwb.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class UwbServiceManager(private val context: Context) {
@@ -22,23 +22,33 @@ class UwbServiceManager(private val context: Context) {
     private var distBack: Double? = null
 
     private var lastLogTime: Long = 0
-    private val LOG_INTERVAL = 5000L // 5초
+    private val LOG_INTERVAL = 5000L
 
     var onLogUpdate: ((Double, Double) -> Unit)? = null
     var onUnlockRangeEntered: (() -> Unit)? = null
 
     fun init() {
-        if (uwbManager == null) {
+        // [수정] UWB 미지원 기기에서 크래시 방지
+        scope.launch {
             try {
-                uwbManager = UwbManager.createInstance(context)
+                if (context.packageManager.hasSystemFeature("android.hardware.uwb")) {
+                    uwbManager = UwbManager.createInstance(context)
+                    Log.d("UWB", "UWB Manager initialized")
+                } else {
+                    Log.w("UWB", "이 기기는 UWB를 지원하지 않습니다.")
+                }
             } catch (e: Exception) {
-                Log.e("UWB", "UWB 미지원 기기", e)
+                Log.e("UWB", "UWB 초기화 실패: ${e.message}")
             }
         }
     }
 
     fun startRanging() {
-        if (uwbManager == null || uwbJob?.isActive == true) return
+        if (uwbManager == null) {
+            Log.w("UWB", "UWB Manager가 null입니다. (지원하지 않는 기기일 수 있음)")
+            return
+        }
+        if (uwbJob?.isActive == true) return
 
         Log.d("UWB", "🚀 UWB 거리 측정 시작")
         lastLogTime = 0
@@ -64,7 +74,8 @@ class UwbServiceManager(private val context: Context) {
                     processRangingResult(result)
                 }
             } catch (e: Exception) {
-                Log.e("UWB", "Ranging 오류: ${e.message}", e)
+                Log.e("UWB", "Ranging 오류 발생: ${e.message}")
+                stopRanging() // 오류 발생 시 안전하게 중지
             }
         }
     }
@@ -78,6 +89,7 @@ class UwbServiceManager(private val context: Context) {
                 if (address == frontAddress) distFront = distance
                 else if (address == backAddress) distBack = distance
 
+                // 두 센서 값 모두 있을 때만 계산
                 if (distFront != null && distBack != null) {
                     checkPositionAndUnlock()
 
@@ -91,6 +103,7 @@ class UwbServiceManager(private val context: Context) {
             is RangingResult.RangingResultPeerDisconnected -> {
                 Log.d("UWB", "장치 연결 끊김")
             }
+            else -> {}
         }
     }
 
@@ -98,13 +111,15 @@ class UwbServiceManager(private val context: Context) {
         val front = distFront ?: return
         val back = distBack ?: return
 
-        if (front < back) {
-            if (front <= 3.0) {
-                Log.i("UWB", "🔓 실외 3m 진입 (앞:$front < 뒤:$back)")
-                onUnlockRangeEntered?.invoke()
-                stopRanging()
-                resetDistances()
-            }
+        // [로직] 앞이 뒤보다 가깝고, 거리가 3m 이내일 때
+        if (front < back && front <= 3.0) {
+            Log.i("UWB", "🔓 실외 3m 진입 (앞:$front < 뒤:$back)")
+
+            // 메인 스레드에서 콜백 실행 보장하지 않아도 됨 (Service에서 처리)
+            onUnlockRangeEntered?.invoke()
+
+            stopRanging() // 한 번 열면 중지
+            resetDistances()
         }
     }
 

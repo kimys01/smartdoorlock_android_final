@@ -36,17 +36,14 @@ class LoginFragment : Fragment() {
         // 저장된 아이디와 설정 불러오기
         val savedId = prefs.getString("saved_id", "")
         val autoLogin = prefs.getBoolean("auto_login", false)
-        val rememberId = prefs.getBoolean("remember_id", false) // [추가] 아이디 기억하기 여부
+        val rememberId = prefs.getBoolean("remember_id", false)
 
-        // 아이디 기억하기가 체크되어 있었다면 입력창에 채움
         if (rememberId) {
             binding.editTextId.setText(savedId)
             binding.checkboxSaveId.isChecked = true
         }
         binding.checkboxAutoLogin.isChecked = autoLogin
 
-        // [핵심 수정] 자동 로그인 체크 (Firebase 로그인 상태 + 저장된 아이디 존재 여부 확인)
-        // savedId가 없으면 DB 경로를 못 찾으므로 자동 로그인을 하지 않고 다시 입력받아야 함
         if (autoLogin && auth.currentUser != null && !savedId.isNullOrEmpty()) {
             navigateToDashboard()
             return
@@ -62,23 +59,15 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // 일반 아이디 -> 이메일 형식 변환
             val emailForAuth = if(inputId.contains("@")) inputId else "$inputId@doorlock.com"
 
             auth.signInWithEmailAndPassword(emailForAuth, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         val editor = prefs.edit()
-
-                        // [중요] 앱 동작을 위해 'saved_id'는 무조건 저장해야 함 (다른 화면에서 사용)
                         editor.putString("saved_id", inputId)
-
-                        // '아이디 기억하기' 체크 여부 저장
                         editor.putBoolean("remember_id", binding.checkboxSaveId.isChecked)
-
-                        // '자동 로그인' 체크 여부 저장
                         editor.putBoolean("auto_login", binding.checkboxAutoLogin.isChecked)
-
                         editor.apply()
 
                         Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT).show()
@@ -91,6 +80,11 @@ class LoginFragment : Fragment() {
 
         binding.buttonSignUp.setOnClickListener {
             findNavController().navigate(R.id.navigation_register)
+        }
+
+        // [추가] 비밀번호 찾기 화면으로 이동
+        binding.textFindPassword.setOnClickListener {
+            findNavController().navigate(R.id.action_login_to_find_password)
         }
     }
 

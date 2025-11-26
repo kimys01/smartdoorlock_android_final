@@ -8,7 +8,7 @@
     android:gravity="center"
     android:background="#FFFFFF">
 
-    <!-- 회원가입 타이틀 (선택사항) -->
+    <!-- 회원가입 타이틀 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -18,7 +18,7 @@
         android:textColor="#000000"
         android:layout_marginBottom="32dp"/>
 
-    <!-- [수정] 아이디 입력란 -->
+    <!-- 아이디 입력란 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -36,7 +36,7 @@
             android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- [수정] 비밀번호 입력란 -->
+    <!-- 비밀번호 입력란 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
             android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- [수정] 이름 입력란 -->
+    <!-- 이름 입력란 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -62,7 +62,6 @@
         android:textColorHint="#888888"
         app:hintTextColor="#2196F3"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -70,6 +69,25 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPersonName"
+            android:textColor="#000000"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- [추가] 휴대폰 번호 입력란 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="휴대폰 번호 (- 없이 입력)"
+        android:textColorHint="#888888"
+        app:hintTextColor="#2196F3"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="32dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
             android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 

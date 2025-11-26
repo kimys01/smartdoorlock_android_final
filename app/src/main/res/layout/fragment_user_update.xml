@@ -17,7 +17,7 @@
         android:textColor="#111827"
         android:layout_marginBottom="32dp"/>
 
-    <!-- [추가] 프로필 이미지 변경 영역 -->
+    <!-- 프로필 이미지 변경 영역 -->
     <FrameLayout
         android:layout_width="120dp"
         android:layout_height="120dp"
@@ -65,11 +65,13 @@
         android:layout_height="wrap_content"
         android:hint="이름"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextNewName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName"/>
+            android:inputType="textPersonName"
+            android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.appcompat.widget.AppCompatButton
@@ -89,11 +91,13 @@
         android:layout_height="wrap_content"
         android:hint="현재 비밀번호"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextCurrentPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"/>
+            android:inputType="textPassword"
+            android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -102,11 +106,13 @@
         android:hint="새 비밀번호"
         android:layout_marginTop="16dp"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextNewPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"/>
+            android:inputType="textPassword"
+            android:textColor="#000000"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.appcompat.widget.AppCompatButton

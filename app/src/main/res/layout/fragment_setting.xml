@@ -9,9 +9,6 @@
     android:background="#FFFFFF"
     tools:context=".ui.setting.SettingsFragment">
 
-    <!--  상단 고정 박스  -->
-
-    <!--  본문 영역  -->
     <LinearLayout
         android:id="@+id/settingContent"
         android:layout_width="match_parent"
@@ -21,68 +18,71 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- [수정] AppCompatButton으로 변경, 그라데이션 및 텍스트 색상 적용 -->
+        <!-- [수정] textSize 50sp -> 24sp 로 변경 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/deviceScanFragment"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="디바이스 연결"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonInviteMember"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="사용자 초대"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
-        <!-- [수정] AppCompatButton으로 변경, 그라데이션 및 텍스트 색상 적용 -->
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonAuthMethod"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="인증방식"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
 
-        <!-- [수정] AppCompatButton으로 변경, 그라데이션 및 텍스트 색상 적용 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonDetailSetting"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="상세설정"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
 
-        <!-- [수정] AppCompatButton으로 변경, 그라데이션 및 텍스트 색상 적용 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonWifiSetting"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="Wi-Fi 설정"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
 
-        <!-- [수정] AppCompatButton으로 변경, 그라데이션 및 텍스트 색상 적용 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonHelp"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
             android:text="도움말"
-            android:textSize="50sp"
+            android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
     </LinearLayout>
 </LinearLayout>
