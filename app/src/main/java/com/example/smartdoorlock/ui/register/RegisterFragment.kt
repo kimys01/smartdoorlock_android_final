@@ -38,9 +38,10 @@ class RegisterFragment : Fragment() {
             val id = binding.editTextId.text.toString().trim()
             val pw = binding.editTextPassword.text.toString().trim()
             val name = binding.editTextName.text.toString().trim()
+            val phone = binding.editTextPhone.text.toString().trim() // [추가]
 
             // 1. 빈 값 체크
-            if (id.isEmpty() || pw.isEmpty() || name.isEmpty()) {
+            if (id.isEmpty() || pw.isEmpty() || name.isEmpty() || phone.isEmpty()) {
                 Toast.makeText(context, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -57,11 +58,17 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            registerUser(id, pw, name)
+            // 4. 휴대폰 번호 체크 (숫자만)
+            if (!Pattern.matches("^[0-9]*$", phone)) {
+                Toast.makeText(context, "휴대폰 번호는 숫자만 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            registerUser(id, pw, name, phone)
         }
     }
 
-    private fun registerUser(username: String, password: String, name: String) {
+    private fun registerUser(username: String, password: String, name: String, phone: String) {
         binding.buttonRegister.isEnabled = false
 
         // 아이디를 이메일 형식으로 변환 (Firebase Auth 요구사항)
@@ -75,13 +82,12 @@ class RegisterFragment : Fragment() {
                 if (uid != null) {
                     val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
                     user.updateProfile(profileUpdates).addOnCompleteListener {
-                        saveFullUserStructure(username, password, name)
+                        saveFullUserStructure(username, password, name, phone)
                     }
                 }
             }
             .addOnFailureListener { e ->
                 binding.buttonRegister.isEnabled = true
-                // 에러 메시지 한국어 변환 (선택 사항)
                 val errorMsg = when {
                     e.message?.contains("email") == true -> "이미 사용 중인 아이디입니다."
                     else -> "가입 실패: ${e.message}"
@@ -90,7 +96,7 @@ class RegisterFragment : Fragment() {
             }
     }
 
-    private fun saveFullUserStructure(username: String, password: String, name: String) {
+    private fun saveFullUserStructure(username: String, password: String, name: String, phone: String) {
         val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
         // 초기 로그 생성
@@ -106,6 +112,7 @@ class RegisterFragment : Fragment() {
             username = username,
             password = password,
             name = name,
+            phoneNumber = phone, // [추가] 휴대폰 번호 저장
             authMethod = "BLE",
             detailSettings = DetailSettings(true, 5, true),
             app_logs = initialLogs,

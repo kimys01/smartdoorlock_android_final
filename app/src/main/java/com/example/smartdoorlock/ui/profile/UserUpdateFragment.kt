@@ -46,7 +46,7 @@ class UserUpdateFragment : Fragment() {
         val userId = prefs.getString("saved_id", null) ?: return
         val userRef = database.getReference("users").child(userId)
 
-        // 초기화: 현재 프로필 사진 불러오기
+        // [핵심] 초기화: 현재 프로필 사진 불러오기
         val currentPhotoUrl = auth.currentUser?.photoUrl
         if (currentPhotoUrl != null) {
             Glide.with(this).load(currentPhotoUrl).circleCrop().into(binding.imgProfilePreview)
@@ -77,7 +77,6 @@ class UserUpdateFragment : Fragment() {
                     prefs.edit().putString("user_name", newName).apply()
                     Toast.makeText(context, "이름 변경 완료", Toast.LENGTH_SHORT).show()
 
-                    // [수정] Nullable 타입 처리 (?.) 추가
                     binding.editTextNewName.text?.clear()
                 }
             }
@@ -102,7 +101,6 @@ class UserUpdateFragment : Fragment() {
                     auth.currentUser?.updatePassword(newPw)?.addOnSuccessListener {
                         Toast.makeText(context, "비밀번호 변경 완료", Toast.LENGTH_SHORT).show()
 
-                        // [수정] Nullable 타입 처리 (?.) 추가
                         binding.editTextCurrentPassword.text?.clear()
                         binding.editTextNewPassword.text?.clear()
                     }

@@ -8,15 +8,6 @@
     android:padding="24dp"
     android:gravity="center_horizontal">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="정보 수정"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#111827"
-        android:layout_marginBottom="32dp"/>
-
     <!-- 프로필 이미지 변경 영역 -->
     <FrameLayout
         android:layout_width="120dp"
@@ -64,7 +55,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="이름"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:textColorHint="#888888">
         <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextNewName"
@@ -90,14 +82,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="현재 비밀번호"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:textColorHint="#888888">
         <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextCurrentPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
-            android:textColor="#000000"/>
+            android:textColor="#000000" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -105,14 +98,15 @@
         android:layout_height="wrap_content"
         android:hint="새 비밀번호"
         android:layout_marginTop="16dp"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:textColorHint="#888888">
         <!-- [수정] 글자색 검정(#000000)으로 지정 -->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextNewPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
-            android:textColor="#000000"/>
+            android:textColor="#000000" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.appcompat.widget.AppCompatButton

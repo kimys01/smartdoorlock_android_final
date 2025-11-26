@@ -1,6 +1,7 @@
 package com.example.smartdoorlock
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -82,27 +83,21 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
 
-        // [수정] BottomNavigationView 아이템 선택 리스너 재정의
-        // 탭을 누를 때마다 해당 탭의 시작점(홈)으로 이동하고 백스택을 정리하여
-        // '수정 화면' 등이 남아있는 문제를 해결합니다.
+        // [수정] BottomNavigationView 아이템 선택 리스너 재정의 (탭 전환 시 스택 초기화)
         binding.navView.setOnItemSelectedListener { item ->
-            // 이미 선택된 탭을 다시 누른 경우가 아닐 때만 처리 (혹은 다시 눌러도 초기화하고 싶으면 조건 제거)
             if (item.itemId != binding.navView.selectedItemId) {
                 val navOptions = NavOptions.Builder()
                     .setLaunchSingleTop(true)
-                    .setPopUpTo(item.itemId, true) // 현재 탭의 스택을 모두 지움
+                    .setPopUpTo(item.itemId, true)
                     .build()
 
                 try {
-                    // 네비게이션 그래프의 ID와 메뉴 ID가 일치해야 함
                     navController.navigate(item.itemId, null, navOptions)
                     return@setOnItemSelectedListener true
                 } catch (e: IllegalArgumentException) {
                     return@setOnItemSelectedListener false
                 }
             }
-            // 같은 탭을 다시 누른 경우: 스택을 비우고 최상위 화면으로 이동 (선택 사항)
-            // navController.popBackStack(item.itemId, false)
             true
         }
 
@@ -130,15 +125,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // [수정] 뒤로가기 처리 커스터마이징 (종료 확인 팝업 추가)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val currentDestination = navController.currentDestination?.id
-                if (currentDestination == R.id.navigation_login && auth.currentUser == null) {
+
+                // 1. 로그인/회원가입 화면에서는 바로 종료 (기존 로직 유지)
+                if (currentDestination == R.id.navigation_login ||
+                    currentDestination == R.id.navigation_register ||
+                    auth.currentUser == null) {
                     finish()
-                } else {
-                    if (!navController.popBackStack()) {
-                        finish()
-                    }
+                    return
+                }
+
+                // 2. 그 외 화면 (메인 탭 등)
+                // popBackStack()이 false를 반환하면 더 이상 뒤로 갈 곳이 없다는 뜻 (=최상위 화면)
+                // 이때 바로 종료하지 않고 확인 팝업을 띄웁니다.
+                if (!navController.popBackStack()) {
+                    showExitConfirmationDialog()
                 }
             }
         })
@@ -155,6 +159,18 @@ class MainActivity : AppCompatActivity() {
                 .build()
             navController.navigate(R.id.navigation_login, null, navOptions)
         }
+    }
+
+    // [추가] 앱 종료 확인 다이얼로그
+    private fun showExitConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("앱 종료")
+            .setMessage("정말 앱을 종료하시겠습니까?")
+            .setPositiveButton("종료") { _, _ ->
+                finish() // 진짜 종료
+            }
+            .setNegativeButton("취소", null) // 팝업 닫기
+            .show()
     }
 
     private fun observeAuthMethod() {
