@@ -34,8 +34,8 @@ class LocationService : Service() {
     private val NOTIFICATION_ID = 1
 
     // 위치 업데이트 간격 (30초마다 확인)
-    private val LOCATION_UPDATE_INTERVAL = 300000L // 300초
-    private val FASTEST_INTERVAL = 95000L // 95초
+    private val LOCATION_UPDATE_INTERVAL = 3*60*1000L // 3분
+    private val FASTEST_INTERVAL = 60*1000L // 1분
 
     override fun onCreate() {
         super.onCreate()
