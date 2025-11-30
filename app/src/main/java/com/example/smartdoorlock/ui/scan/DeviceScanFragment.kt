@@ -179,65 +179,42 @@ class DeviceScanFragment : Fragment() {
             val device = result.device
             val address = device.address
 
-            // [핵심] 여러 방법으로 이름 가져오기
-            var deviceName: String? = null
+            // 1. 이름 가져오기 시도 (ScanRecord 우선, 없으면 Device 이름)
+            val deviceName = result.scanRecord?.deviceName ?: device.name
 
-            // 방법 1: ScanRecord에서 이름 가져오기 (권한 불필요)
-            try {
-                deviceName = result.scanRecord?.deviceName
-            } catch (e: Exception) {
-                Log.e("BLE_SCAN", "ScanRecord 오류: ${e.message}")
-            }
+            // 2. [디버깅 로그] 무엇이 스캔되었는지 로그창에 모두 출력
+            Log.d("BLE_SCAN", "감지됨: ${deviceName ?: "이름없음"} [$address] (RSSI: ${result.rssi})")
 
-            // 방법 2: Device에서 이름 가져오기 (BLUETOOTH_CONNECT 권한 필요)
-            if (deviceName.isNullOrEmpty()) {
-                try {
-                    if (hasBluetoothConnectPermission()) {
-                        deviceName = device.name
-                    }
-                } catch (e: Exception) {
-                    Log.e("BLE_SCAN", "Device.name 오류: ${e.message}")
-                }
-            }
+            // 3. [수정됨] 필터링 조건 제거 (모든 기기 표시)
+            // 원래 코드: if (deviceName != "SmartDoorlock") return
+            // 수정 코드: 무조건 리스트에 추가하여 눈으로 확인
 
-            // [핵심] SmartDoorlock만 필터링!
-            if (deviceName == null || !deviceName.equals(TARGET_DEVICE_NAME, ignoreCase = true)) {
-                // 도어락이 아니면 무시
-                Log.d("BLE_SCAN", "무시: $address / ${deviceName ?: "이름없음"}")
-                return
-            }
-
-            Log.d("BLE_SCAN", "========================================")
-            Log.d("BLE_SCAN", "✅ 도어락 발견!")
-            Log.d("BLE_SCAN", "이름: $deviceName")
-            Log.d("BLE_SCAN", "MAC: $address")
-            Log.d("BLE_SCAN", "RSSI: ${result.rssi} dBm")
-            Log.d("BLE_SCAN", "========================================")
-
-            // 중복 체크 (MAC 주소 기준)
+            // 중복 방지 (이미 리스트에 있으면 추가 안 함)
             val existingIndex = scanResults.indexOfFirst { it.first.address == address }
             if (existingIndex == -1) {
-                scanResults.add(Pair(device, deviceName))
+                // 리스트에 추가 (이름이 없으면 "이름 없음"으로 표시)
+                scanResults.add(Pair(device, deviceName ?: "이름 없음"))
+
+                // UI 업데이트
                 handler.post {
                     deviceAdapter.notifyItemInserted(scanResults.size - 1)
                     binding.tvScanStatus.text = "검색 중... (${scanResults.size}개 발견)"
+                }
+            } else {
+                // 이미 있는 기기라면, 이름이 갱신되었을 때 업데이트 (중요!)
+                // 처음에 "이름 없음"이었다가 나중에 "SmartDoorlock"으로 정보가 들어올 수 있음
+                if (deviceName != null && scanResults[existingIndex].second != deviceName) {
+                    scanResults[existingIndex] = Pair(device, deviceName)
+                    handler.post {
+                        deviceAdapter.notifyItemChanged(existingIndex)
+                    }
                 }
             }
         }
 
         override fun onScanFailed(errorCode: Int) {
-            val errorMsg = when(errorCode) {
-                SCAN_FAILED_ALREADY_STARTED -> "스캔이 이미 시작됨"
-                SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "앱 등록 실패"
-                SCAN_FAILED_INTERNAL_ERROR -> "내부 오류"
-                SCAN_FAILED_FEATURE_UNSUPPORTED -> "기능 미지원"
-                else -> "알 수 없는 오류 ($errorCode)"
-            }
-
-            Log.e("BLE_SCAN", "❌ 스캔 실패: $errorMsg")
-            Toast.makeText(context, "스캔 실패: $errorMsg", Toast.LENGTH_SHORT).show()
-
-            handler.post { stopScan() }
+            Log.e("BLE_SCAN", "스캔 실패 에러: $errorCode")
+            Toast.makeText(context, "스캔 실패 (에러코드: $errorCode)", Toast.LENGTH_SHORT).show()
         }
     }
 

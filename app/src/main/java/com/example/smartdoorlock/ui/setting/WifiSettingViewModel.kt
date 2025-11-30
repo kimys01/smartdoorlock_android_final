@@ -109,7 +109,8 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
             return
         }
 
-        val randomId = UUID.randomUUID().toString()
+        //val randomId = UUID.randomUUID().toString()
+        val randomId = "test1"
 
         if (lat == 0.0 && lon == 0.0) {
             getCurrentLocationAndRegister(targetAddress, randomId, ssid, pw)
