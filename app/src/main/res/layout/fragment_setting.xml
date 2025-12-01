@@ -18,7 +18,7 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- [수정] textSize 50sp -> 24sp 로 변경 -->
+        <!-- 디바이스 연결 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/deviceScanFragment"
             android:layout_width="match_parent"
@@ -30,6 +30,7 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
+        <!-- 사용자 초대 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonInviteMember"
             android:layout_width="match_parent"
@@ -41,6 +42,7 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
+        <!-- 인증 방식 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonAuthMethod"
             android:layout_width="match_parent"
@@ -52,6 +54,19 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
+        <!-- [추가된 부분] 도어락 비밀번호 변경 버튼 -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/buttonChangeDoorlockPin"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
+            android:text="도어락 비밀번호 변경"
+            android:textSize="24sp"
+            android:background="@drawable/gradient_button_background"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
+
+        <!-- 상세 설정 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonDetailSetting"
             android:layout_width="match_parent"
@@ -63,6 +78,7 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
+        <!-- Wi-Fi 설정 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonWifiSetting"
             android:layout_width="match_parent"
@@ -74,6 +90,7 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
+        <!-- 도움말 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/buttonHelp"
             android:layout_width="match_parent"

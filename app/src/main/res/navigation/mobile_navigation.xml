@@ -27,8 +27,6 @@
             app:popUpToInclusive="true"
             app:enterAnim="@anim/nav_default_enter_anim"
             app:exitAnim="@anim/nav_default_exit_anim"/>
-
-        <!-- [추가] 비밀번호 찾기로 이동 -->
         <action
             android:id="@+id/action_login_to_find_password"
             app:destination="@id/findPasswordFragment"
@@ -38,7 +36,6 @@
             app:popExitAnim="@anim/nav_default_pop_exit_anim"/>
     </fragment>
 
-    <!-- [추가] 비밀번호 찾기 프래그먼트 -->
     <fragment
         android:id="@+id/findPasswordFragment"
         android:name="com.example.smartdoorlock.ui.login.FindPasswordFragment"
@@ -74,6 +71,13 @@
             app:popEnterAnim="@anim/nav_default_pop_enter_anim"
             app:popExitAnim="@anim/nav_default_pop_exit_anim"/>
     </fragment>
+
+    <!-- [추가] 도어락 비밀번호 변경 화면 등록 -->
+    <fragment
+        android:id="@+id/navigation_doorlock_password"
+        android:name="com.example.smartdoorlock.ui.setting.DoorlockPasswordFragment"
+        android:label="도어락 비밀번호 변경"
+        tools:layout="@layout/fragment_doorlock_password" />
 
     <!-- 프로필 -->
     <fragment

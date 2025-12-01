@@ -24,23 +24,22 @@ class SettingsFragment : Fragment() {
 
         // 각 버튼에 안전한 이동 적용
         binding.deviceScanFragment.setOnClickListener { safeNavigate(R.id.action_settings_to_scan) }
-        binding.buttonAuthMethod.setOnClickListener { safeNavigate(R.id.navigation_auth_method) } // ID 주의 (action ID인지 dest ID인지 확인)
+        binding.buttonAuthMethod.setOnClickListener { safeNavigate(R.id.navigation_auth_method) }
         binding.buttonDetailSetting.setOnClickListener { safeNavigate(R.id.navigation_detail_setting) }
         binding.buttonWifiSetting.setOnClickListener { safeNavigate(R.id.wifiSettingFragment) }
         binding.buttonHelp.setOnClickListener { safeNavigate(R.id.navigation_help) }
         binding.buttonInviteMember.setOnClickListener { safeNavigate(R.id.navigation_add_member) }
+
+        // [추가] 도어락 비밀번호 변경 버튼 클릭 리스너
+        binding.buttonChangeDoorlockPin.setOnClickListener { safeNavigate(R.id.navigation_doorlock_password) }
     }
 
-    // [핵심] 팅김 방지: 현재 위치가 '설정'일 때만 이동 수행
     private fun safeNavigate(destinationId: Int) {
         val navController = findNavController()
         if (navController.currentDestination?.id == R.id.navigation_settings) {
-            // destinationId가 액션 ID인지 프래그먼트 ID인지에 따라 처리
-            // 여기서는 nav graph에 정의된 액션/목적지로 이동
             try {
                 navController.navigate(destinationId)
             } catch (e: IllegalArgumentException) {
-                // 네비게이션 경로가 없을 때 죽지 않도록 처리
                 e.printStackTrace()
             }
         }

@@ -74,7 +74,7 @@ class DashboardFragment : Fragment() {
      * 사용자의 도어락 확인 후 실시간 모니터링 시작
      */
     private fun checkAndMonitorDoorlock() {
-        /*val prefs = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+        val prefs = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
         val userId = prefs.getString("saved_id", null)
 
         if (userId == null) {
@@ -108,7 +108,7 @@ class DashboardFragment : Fragment() {
             .addOnFailureListener { e ->
                 Log.e(TAG, "Failed to get doorlocks", e)
                 updateDashboardUI("도어락 정보 로드 실패", false)
-            }*/
+            }
     }
 
     /**
