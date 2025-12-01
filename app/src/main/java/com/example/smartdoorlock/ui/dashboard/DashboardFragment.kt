@@ -109,10 +109,6 @@ class DashboardFragment : Fragment() {
                 Log.e(TAG, "Failed to get doorlocks", e)
                 updateDashboardUI("도어락 정보 로드 실패", false)
             }*/
-        currentDoorlockId = "test1"
-        Log.d("Dashboard", "테스트용 ID 강제 설정: $currentDoorlockId")
-
-        startRealtimeMonitoring(currentDoorlockId!!)
     }
 
     /**

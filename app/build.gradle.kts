@@ -53,12 +53,11 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    // 위치 & UWB
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-    implementation ("androidx.core.uwb:uwb:1.0.0-alpha08")
-
     // Google Location Service
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // UWB 라이브러리 (필수)
+    implementation("androidx.core.uwb:uwb:1.0.0-alpha08")
 
     // Firebase (BOM 사용)
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
