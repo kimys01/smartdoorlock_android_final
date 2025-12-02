@@ -1,6 +1,7 @@
 package com.example.smartdoorlock.ui.dashboard
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -8,21 +9,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.smartdoorlock.R
 import com.example.smartdoorlock.databinding.FragmentDashboardBinding
-import com.example.smartdoorlock.helper.FirebaseHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * DashboardFragment v2.0 - 실시간 양방향 동기화
+ * DashboardFragment v2.1 - UI Update
  *
- * 📱 앱 → ESP32: command 경로에 "LOCK"/"UNLOCK" 전송
- * 📡 ESP32 → 앱: status 경로 실시간 감시로 UI 자동 업데이트
+ * 📱 XML Layout: 새로운 CardView 기반 디자인 적용
+ * 📡 Logic: Firebase 실시간 연동 유지
  */
 class DashboardFragment : Fragment() {
 
@@ -42,6 +43,13 @@ class DashboardFragment : Fragment() {
 
     companion object {
         private const val TAG = "Dashboard"
+        // 색상 상수
+        private const val COLOR_LOCKED = "#4CAF50"   // 초록색 (잠김)
+        private const val COLOR_LOCKED_BG = "#E8F5E9" // 연한 초록색 배경
+        private const val COLOR_UNLOCKED = "#2196F3" // 파란색 (열림)
+        private const val COLOR_UNLOCKED_BG = "#E3F2FD" // 연한 파란색 배경
+        private const val COLOR_OFFLINE = "#9E9E9E"  // 회색 (오프라인)
+        private const val COLOR_OFFLINE_BG = "#F3F4F6" // 연한 회색 배경
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -52,7 +60,7 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 새 도어락 추가 버튼
+        // 1. 기기 추가 버튼 (CardView)
         binding.btnAddDevice.setOnClickListener {
             try {
                 findNavController().navigate(R.id.action_dashboard_to_scan)
@@ -61,30 +69,30 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        // 잠금/해제 버튼
+        // 2. 문 제어 버튼 (CardView)
         binding.btnUnlock.setOnClickListener {
             sendDoorCommand()
         }
 
-        // 도어락 확인 및 실시간 모니터링 시작
+        // 3. 초기 상태 설정 (로딩 중)
+        updateDashboardUI("연결 중...", false)
+
+        // 4. 도어락 모니터링 시작
         checkAndMonitorDoorlock()
     }
 
     /**
-     * 사용자의 도어락 확인 후 실시간 모니터링 시작
+     * 사용자의 도어락 ID 조회 후 모니터링 시작
      */
     private fun checkAndMonitorDoorlock() {
         val prefs = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
         val userId = prefs.getString("saved_id", null)
 
         if (userId == null) {
-            updateDashboardUI("로그인이 필요합니다", false)
+            updateDashboardUI("로그인 필요", false)
             return
         }
 
-        Log.d(TAG, "Checking doorlocks for user: $userId")
-
-        // 사용자의 첫 번째 도어락 가져오기
         database.getReference("users").child(userId).child("my_doorlocks")
             .limitToFirst(1)
             .get()
@@ -93,230 +101,178 @@ class DashboardFragment : Fragment() {
 
                 if (snapshot.exists() && snapshot.childrenCount > 0) {
                     currentDoorlockId = snapshot.children.first().key
-                    Log.d(TAG, "Found doorlock: $currentDoorlockId")
-
                     if (currentDoorlockId != null) {
-                        // 실시간 모니터링 시작
                         startRealtimeMonitoring(currentDoorlockId!!)
                     }
                 } else {
-                    Log.d(TAG, "No doorlock registered")
-                    updateDashboardUI("등록된 도어락이 없습니다", false)
-                    binding.btnAddDevice.visibility = View.VISIBLE
+                    updateDashboardUI("기기 없음", false)
+                    // 기기가 없을 때 상태 텍스트 안내
+                    binding.txtStatus.text = "등록된 기기가 없습니다"
+                    binding.txtLastUpdated.text = "기기 추가 버튼을 눌러 등록해주세요"
                 }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to get doorlocks", e)
-                updateDashboardUI("도어락 정보 로드 실패", false)
+            .addOnFailureListener {
+                updateDashboardUI("로드 실패", false)
             }
     }
 
     /**
-     * 🔄 실시간 상태 모니터링 시작
-     *
-     * ESP32가 status를 업데이트하면 즉시 이 콜백이 호출됨
+     * 실시간 상태 모니터링
      */
     private fun startRealtimeMonitoring(doorlockId: String) {
-        // 기존 리스너 제거
         if (statusRef != null && statusListener != null) {
             statusRef?.removeEventListener(statusListener!!)
         }
 
-        // status 전체 경로 감시 (state, last_method, last_time 모두 포함)
         statusRef = database.getReference("doorlocks").child(doorlockId).child("status")
 
         statusListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (_binding == null) return
 
-                Log.d(TAG, "========== STATUS CHANGED ==========")
-                Log.d(TAG, "Raw snapshot: ${snapshot.value}")
-
                 if (!snapshot.exists()) {
                     updateDashboardUI("상태 정보 없음", false)
                     return
                 }
 
-                // 상태 정보 파싱
                 val state = snapshot.child("state").getValue(String::class.java) ?: "UNKNOWN"
                 val lastMethod = snapshot.child("last_method").getValue(String::class.java) ?: ""
                 val lastTime = snapshot.child("last_time").getValue(String::class.java) ?: ""
-                val doorClosed = snapshot.child("door_closed").getValue(Boolean::class.java) ?: true
 
-                Log.d(TAG, "State: $state")
-                Log.d(TAG, "Last Method: $lastMethod")
-                Log.d(TAG, "Last Time: $lastTime")
-                Log.d(TAG, "Door Closed: $doorClosed")
-
-                // 상태가 변경되었을 때만 UI 업데이트
+                // 상태 변경 감지
                 if (state != lastKnownState) {
                     lastKnownState = state
-                    Log.d(TAG, "State changed! Updating UI...")
-
-                    when (state.uppercase()) {
-                        "UNLOCK", "OPEN" -> {
-                            updateDashboardUI("🔓 문이 열려 있습니다", true, true)
-                            showMethodInfo(lastMethod, lastTime)
-                        }
-                        "LOCK", "CLOSE" -> {
-                            updateDashboardUI("🔒 문이 잠겨 있습니다", true, false)
-                            showMethodInfo(lastMethod, lastTime)
-                        }
-                        else -> {
-                            updateDashboardUI("상태: $state", true, false)
-                        }
-                    }
+                    updateUIByState(state, lastMethod, lastTime)
                 } else {
-                    Log.d(TAG, "Same state, no UI update needed")
+                    // 상태는 같아도 시간 정보는 업데이트
+                    binding.txtLastUpdated.text = "마지막 동작: $lastTime"
                 }
-
-                Log.d(TAG, "=====================================")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Status listener cancelled: ${error.message}")
                 updateDashboardUI("연결 오류", false)
             }
         }
 
-        // 리스너 등록 (addValueEventListener = 실시간 감시)
         statusRef?.addValueEventListener(statusListener!!)
-        Log.d(TAG, "Started realtime monitoring for: $doorlockId")
     }
 
     /**
-     * 📱 → 📡 명령 전송
-     *
-     * command 경로에 LOCK/UNLOCK 전송
-     * ESP32가 이를 수신하여 처리 후 status 업데이트
+     * 상태(LOCK/UNLOCK)에 따른 UI 디자인 변경
+     */
+    private fun updateUIByState(state: String, method: String, time: String) {
+        if (_binding == null) return
+
+        val isUnlocked = (state.uppercase() == "UNLOCK" || state.uppercase() == "OPEN")
+
+        // 1. 메인 상태 텍스트 & 시간
+        binding.txtStatus.text = if (isUnlocked) "문이 열려 있습니다" else "문이 잠겨 있습니다"
+        binding.txtLastUpdated.text = if (time.isNotEmpty()) "마지막 동작: $time" else "업데이트 됨"
+
+        // 2. 색상 설정
+        val themeColor = Color.parseColor(if (isUnlocked) COLOR_UNLOCKED else COLOR_LOCKED)
+        val bgColor = Color.parseColor(if (isUnlocked) COLOR_UNLOCKED_BG else COLOR_LOCKED_BG)
+
+        // 3. 상태 아이콘 영역 (원형 배경 + 아이콘 색상)
+        binding.viewStatusIndicator.backgroundTintList = ColorStateList.valueOf(bgColor)
+        binding.imgStatusIcon.setColorFilter(themeColor)
+
+        // 아이콘 리소스 변경 (기본 제공 아이콘 활용)
+        binding.imgStatusIcon.setImageResource(
+            if (isUnlocked) R.drawable.ic_lock_open // 생성한 로컬 리소스 사용
+            else android.R.drawable.ic_lock_idle_lock
+        )
+
+        // 4. 컨트롤 버튼 (CardView) 업데이트
+        binding.tvUnlockLabel.text = if (isUnlocked) "문 잠그기" else "문 열기"
+        binding.imgUnlockBtnIcon.setColorFilter(themeColor) // 버튼 내부 아이콘도 상태 색상 따라감
+
+        // 버튼 활성화
+        binding.btnUnlock.isEnabled = true
+        binding.btnUnlock.alpha = 1.0f
+    }
+
+    /**
+     * 기본 UI 업데이트 (에러, 로딩 등)
+     */
+    private fun updateDashboardUI(statusText: String, isEnabled: Boolean) {
+        if (_binding == null) return
+
+        binding.txtStatus.text = statusText
+        binding.btnUnlock.isEnabled = isEnabled
+        binding.btnUnlock.alpha = if (isEnabled) 1.0f else 0.5f // 비활성화 시 흐리게
+
+        // 오프라인/대기 모드 색상
+        if (!isEnabled) {
+            val greyColor = Color.parseColor(COLOR_OFFLINE)
+            val greyBg = Color.parseColor(COLOR_OFFLINE_BG)
+
+            binding.viewStatusIndicator.backgroundTintList = ColorStateList.valueOf(greyBg)
+            binding.imgStatusIcon.setColorFilter(greyColor)
+            binding.imgUnlockBtnIcon.setColorFilter(greyColor)
+        }
+    }
+
+    /**
+     * 명령 전송 (LOCK <-> UNLOCK 토글)
      */
     private fun sendDoorCommand() {
         if (currentDoorlockId == null) {
-            Toast.makeText(context, "도어락이 연결되지 않았습니다", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "기기가 연결되지 않았습니다", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 현재 상태 기반으로 반대 명령 결정
+        // 현재 상태의 반대 명령
         val newCommand = if (lastKnownState.uppercase() == "UNLOCK" ||
-            lastKnownState.uppercase() == "OPEN") {
-            "LOCK"
-        } else {
-            "UNLOCK"
-        }
+            lastKnownState.uppercase() == "OPEN") "LOCK" else "UNLOCK"
 
-        Log.d(TAG, "Sending command: $newCommand")
-
-        // 버튼 비활성화 (중복 클릭 방지)
+        // 버튼 임시 비활성화 (UX)
         binding.btnUnlock.isEnabled = false
-        binding.btnUnlock.text = "처리 중..."
+        binding.btnUnlock.alpha = 0.5f
+        binding.tvUnlockLabel.text = "처리 중..."
 
-        // Firebase command 경로에 명령 전송
         val commandRef = database.getReference("doorlocks")
             .child(currentDoorlockId!!)
             .child("command")
 
         commandRef.setValue(newCommand)
             .addOnSuccessListener {
-                Log.d(TAG, "Command sent successfully: $newCommand")
-
                 saveLogToDoorlock(newCommand)
-
-                binding.btnUnlock.isEnabled = true
-                val message = if (newCommand == "UNLOCK") "열림 명령 전송됨" else "잠금 명령 전송됨"
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "명령 전송됨: $newCommand", Toast.LENGTH_SHORT).show()
+                // 버튼 상태는 리스너(startRealtimeMonitoring)가 상태 변화를 감지하면 다시 활성화됨
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to send command", e)
                 binding.btnUnlock.isEnabled = true
-                binding.btnUnlock.text = if (lastKnownState.uppercase() == "UNLOCK") "문 잠그기 🔒" else "문 열기 🔓"
-                Toast.makeText(context, "명령 전송 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                binding.btnUnlock.alpha = 1.0f
+                binding.tvUnlockLabel.text = "재시도"
+                Toast.makeText(context, "전송 실패", Toast.LENGTH_SHORT).show()
             }
     }
 
-    // [추가된 함수] 도어락 경로에 로그 저장
     private fun saveLogToDoorlock(command: String) {
         if (currentDoorlockId == null) return
-
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
         val user = auth.currentUser?.displayName ?: "AppUser"
 
-        // 저장 경로: doorlocks/{ID}/logs
-        val logRef = database.getReference("doorlocks").child(currentDoorlockId!!).child("logs")
-
         val logData = mapOf(
             "time" to timestamp,
-            "state" to command, // "UNLOCK" 또는 "LOCK"
+            "state" to command,
             "method" to "APP_REMOTE",
             "user" to user
         )
-
-        logRef.push().setValue(logData)
-    }
-
-    /**
-     * UI 업데이트
-     */
-    private fun updateDashboardUI(statusText: String, isEnabled: Boolean, isUnlocked: Boolean = false) {
-        if (_binding == null) return
-
-        binding.txtStatus.text = statusText
-        binding.btnUnlock.isEnabled = isEnabled
-
-        if (isEnabled) {
-            if (isUnlocked) {
-                // 열린 상태
-                binding.txtStatus.setTextColor(Color.parseColor("#2196F3"))  // 파란색
-                binding.btnUnlock.text = "문 잠그기 🔒"
-                binding.btnUnlock.setBackgroundResource(R.drawable.gradient_button_background)
-            } else {
-                // 잠긴 상태
-                binding.txtStatus.setTextColor(Color.parseColor("#4CAF50"))  // 초록색
-                binding.btnUnlock.text = "문 열기 🔓"
-                binding.btnUnlock.setBackgroundResource(R.drawable.gradient_button_background)
-            }
-        } else {
-            binding.txtStatus.setTextColor(Color.parseColor("#888888"))  // 회색
-        }
-    }
-
-    /**
-     * 마지막 조작 정보 표시 (선택적)
-     */
-    private fun showMethodInfo(method: String, time: String) {
-        if (method.isNotEmpty()) {
-            val methodText = when (method.uppercase()) {
-                "APP" -> "앱"
-                "RFID" -> "RFID 카드"
-                "KEYPAD" -> "키패드"
-                "INSIDE_BTN" -> "내부 버튼"
-                "OUTSIDE_BTN" -> "외부 버튼"
-                "DOOR_BTN" -> "도어 버튼"
-                "AUTO_LOCK" -> "자동 잠금"
-                "BOOT", "INIT" -> "시스템"
-                "DB_SYNC", "DB_POLL" -> "동기화"
-                else -> method
-            }
-            Log.d(TAG, "Last action: $methodText at $time")
-        }
+        database.getReference("doorlocks").child(currentDoorlockId!!).child("logs").push().setValue(logData)
     }
 
     override fun onResume() {
         super.onResume()
-        // 화면 복귀 시 상태 재확인
-        currentDoorlockId?.let {
-            startRealtimeMonitoring(it)
-        }
+        currentDoorlockId?.let { startRealtimeMonitoring(it) }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-
-        // 리스너 정리
         if (statusListener != null && statusRef != null) {
             statusRef?.removeEventListener(statusListener!!)
-            Log.d(TAG, "Removed status listener")
         }
-
         _binding = null
     }
 }

@@ -10,7 +10,7 @@
     <View
         android:id="@+id/viewHeaderBackground"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="300dp"
         android:background="@drawable/gradient_actionbar_background"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -123,7 +123,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
-                android:layout_marginTop="48dp"
+                android:layout_marginTop="30dp"
                 android:text="내 기기"
                 android:textColor="#374151"
                 android:textSize="18sp"

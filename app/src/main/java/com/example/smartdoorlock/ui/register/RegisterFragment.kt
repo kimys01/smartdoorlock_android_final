@@ -34,12 +34,24 @@ class RegisterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         auth = FirebaseAuth.getInstance()
 
+        // 1. 뒤로가기 버튼 리스너
+        binding.btnBack.setOnClickListener {
+            findNavController().navigateUp()
+        }
+
+        // 2. 하단 '로그인하기' 텍스트 리스너
+        binding.tvLoginLink.setOnClickListener {
+            findNavController().navigateUp() // 로그인 화면(이전 화면)으로 복귀
+        }
+
+        // 3. 회원가입 버튼 리스너
         binding.buttonRegister.setOnClickListener {
             val id = binding.editTextId.text.toString().trim()
             val pw = binding.editTextPassword.text.toString().trim()
             val name = binding.editTextName.text.toString().trim()
             val phone = binding.editTextPhone.text.toString().trim()
 
+            // 입력값 검증
             if (id.isEmpty() || pw.isEmpty() || name.isEmpty() || phone.isEmpty()) {
                 Toast.makeText(context, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -60,13 +72,16 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            // 가입 프로세스 시작
             registerUser(id, pw, name, phone)
         }
     }
 
     private fun registerUser(username: String, password: String, name: String, phone: String) {
         binding.buttonRegister.isEnabled = false
+        binding.buttonRegister.text = "가입 처리 중..."
 
+        // Firebase Auth는 이메일 형식을 요구하므로 가짜 이메일 생성
         val fakeEmail = "$username@doorlock.com"
 
         auth.createUserWithEmailAndPassword(fakeEmail, password)
@@ -75,16 +90,21 @@ class RegisterFragment : Fragment() {
                 val uid = user?.uid
 
                 if (uid != null) {
+                    // 프로필 이름 업데이트
                     val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
                     user.updateProfile(profileUpdates).addOnCompleteListener {
+                        // Realtime Database에 추가 정보 저장
                         saveFullUserStructure(username, password, name, phone)
                     }
                 }
             }
             .addOnFailureListener { e ->
                 binding.buttonRegister.isEnabled = true
+                binding.buttonRegister.text = "회원가입 완료"
+
                 val errorMsg = when {
                     e.message?.contains("email") == true -> "이미 사용 중인 아이디입니다."
+                    e.message?.contains("weak") == true -> "비밀번호가 너무 쉽습니다."
                     else -> "가입 실패: ${e.message}"
                 }
                 Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
@@ -99,8 +119,7 @@ class RegisterFragment : Fragment() {
         val logKey = database.reference.push().key ?: "init_log"
         initialLogs[logKey] = AppLogItem("계정 생성: Initial Set", currentTime)
 
-        // [수정] 초기 위치 로그 (HashMap 사용) - 노드 생성용 더미 데이터
-        // 타입을 명시적으로 HashMap<String, Any>로 지정하여 User 객체 생성 시 타입 불일치 오류 방지
+        // 초기 위치 로그 (HashMap 사용) - 노드 생성용 더미 데이터
         val initialLocationLogs = HashMap<String, Any>()
         val locKey = database.reference.push().key ?: "init_loc"
         val dummyLoc = hashMapOf(
@@ -125,18 +144,19 @@ class RegisterFragment : Fragment() {
             app_logs = initialLogs,
             doorlock = initialDoorlock,
             uwb_logs = HashMap(),
-            location_logs = initialLocationLogs // 수정된 HashMap 할당
+            location_logs = initialLocationLogs
         )
 
-        // Firebase에 저장
+        // Firebase Realtime Database에 저장
         database.getReference("users").child(username).setValue(newUser)
             .addOnSuccessListener {
-                Toast.makeText(context, "회원가입 완료!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.navigation_login)
+                Toast.makeText(context, "회원가입 완료! 로그인 해주세요.", Toast.LENGTH_SHORT).show()
+                findNavController().navigateUp() // 로그인 화면으로 돌아가기
             }
             .addOnFailureListener { e ->
                 Toast.makeText(context, "DB 저장 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                 binding.buttonRegister.isEnabled = true
+                binding.buttonRegister.text = "회원가입 완료"
             }
     }
 

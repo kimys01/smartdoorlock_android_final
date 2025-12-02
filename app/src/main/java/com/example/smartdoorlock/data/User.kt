@@ -15,7 +15,6 @@ data class User(
 
     val doorlock: UserDoorlock = UserDoorlock(),
 
-    // [수정] LocationLog 클래스 대신 Any(HashMap) 사용
     val location_logs: HashMap<String, Any> = HashMap(),
 
     val uwb_logs: HashMap<String, UwbLog> = HashMap(),
@@ -49,11 +48,14 @@ data class UserDoorlock(
     val logs: HashMap<String, DoorlockLog> = HashMap()
 )
 
+// [수정] 하드웨어(ESP32)에서 보내주는 데이터 필드 추가 (dist_out, dist_in)
 data class DoorlockStatus(
     val door_closed: Boolean = true,
     val last_method: String = "NONE",
     val last_time: String = "",
-    val state: String = "LOCK"
+    val state: String = "LOCK",
+    val dist_out: Double = 0.0, // 외부 UWB 거리
+    val dist_in: Double = 0.0   // 내부 UWB 거리
 )
 
 data class DoorlockLog(
