@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#F3F4F6">
 
-    <!-- 1. 상단 그라데이션 헤더 -->
+    <!-- 1. 배경 (가장 뒤) -->
     <View
         android:id="@+id/viewHeaderBackground"
         android:layout_width="match_parent"
@@ -15,47 +15,8 @@
         android:background="@drawable/gradient_actionbar_background_reverse"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 헤더 타이틀 -->
-    <TextView
-        android:id="@+id/tvHeaderTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
-        android:text="프로필"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvHeaderSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="내 정보와 등록된 기기 관리"
-        android:textColor="#E0E0E0"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="@id/tvHeaderTitle"
-        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
-
-    <!-- 로그아웃 버튼 (수정됨: ic_logout 참조) -->
-    <ImageButton
-        android:id="@+id/btnLogout"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_logout_24dp"
-        app:tint="#FFFFFF"
-        android:scaleType="center"
-        android:contentDescription="로그아웃"
-        app:layout_constraintBottom_toBottomOf="@id/tvHeaderTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tvHeaderTitle" />
-
-    <!-- 2. 메인 컨텐츠 (스크롤 영역) -->
+    <!-- 2. 메인 컨텐츠 (중간) -->
+    <!-- 스크롤 뷰를 헤더 텍스트/버튼보다 먼저 선언해야, 텍스트/버튼이 이 위에 뜹니다 -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -305,5 +266,47 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- 3. 헤더 UI (가장 앞 / 최상단 레이어) -->
+    <!-- 스크롤 뷰보다 뒤에 정의해야 화면 맨 위에 떠있게 되고, 터치가 가능합니다 -->
+
+    <TextView
+        android:id="@+id/tvHeaderTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:text="프로필"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvHeaderSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="내 정보와 등록된 기기 관리"
+        android:textColor="#E0E0E0"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="@id/tvHeaderTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
+
+    <!-- 로그아웃 버튼 -->
+    <ImageButton
+        android:id="@+id/btnLogout"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_logout_24dp"
+        app:tint="#FFFFFF"
+        android:scaleType="center"
+        android:contentDescription="로그아웃"
+        app:layout_constraintBottom_toBottomOf="@id/tvHeaderTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvHeaderTitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
