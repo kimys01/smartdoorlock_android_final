@@ -42,17 +42,17 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
-        <!-- 인증 방식 -->
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/buttonAuthMethod"
+            android:id="@+id/buttonUnifiedSetting"
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:layout_marginBottom="12dp"
-            android:text="인증방식"
+            android:text="도어락 통합 설정"
             android:textSize="24sp"
             android:background="@drawable/gradient_button_background"
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
+        <!-- 인증 방식 -->
 
         <!-- [추가된 부분] 도어락 비밀번호 변경 버튼 -->
         <androidx.appcompat.widget.AppCompatButton
@@ -66,17 +66,6 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"/>
 
-        <!-- 상세 설정 -->
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/buttonDetailSetting"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginBottom="12dp"
-            android:text="상세설정"
-            android:textSize="24sp"
-            android:background="@drawable/gradient_button_background"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"/>
 
         <!-- Wi-Fi 설정 -->
         <androidx.appcompat.widget.AppCompatButton

@@ -37,6 +37,11 @@
     </fragment>
 
     <fragment
+        android:id="@+id/navigation_unified_setting"
+        android:name="com.example.smartdoorlock.ui.settings.UnifiedSettingFragment"
+        android:label="통합 설정"
+        tools:layout="@layout/fragment_unified_setting" />
+    <fragment
         android:id="@+id/findPasswordFragment"
         android:name="com.example.smartdoorlock.ui.login.FindPasswordFragment"
         android:label="비밀번호 찾기"
@@ -124,8 +129,6 @@
     </fragment>
     <fragment android:id="@+id/navigation_notifications" android:name="com.example.smartdoorlock.ui.notifications.NotificationsFragment" android:label="@string/title_notifications" tools:layout="@layout/fragment_notifications" />
     <fragment android:id="@+id/navigation_user_update" android:name="com.example.smartdoorlock.ui.profile.UserUpdateFragment" android:label="사용자 정보 수정" tools:layout="@layout/fragment_user_update" />
-    <fragment android:id="@+id/navigation_auth_method" android:name="com.example.smartdoorlock.ui.settings.AuthMethodFragment" android:label="인증방식" tools:layout="@layout/fragment_auth_method"/>
-    <fragment android:id="@+id/navigation_detail_setting" android:name="com.example.smartdoorlock.ui.settings.DetailSettingFragment" android:label="상세설정" tools:layout="@layout/fragment_detail_setting" />
     <fragment android:id="@+id/navigation_help" android:name="com.example.smartdoorlock.ui.settings.HelpFragment" android:label="도움말" tools:layout="@layout/fragment_help"/>
     <fragment android:id="@+id/navigation_add_member" android:name="com.example.smartdoorlock.ui.settings.AddMemberFragment" android:label="사용자 추가" tools:layout="@layout/fragment_add_member"/>
 

@@ -22,20 +22,29 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 각 버튼에 안전한 이동 적용
+        // 1. 디바이스 연결
         binding.deviceScanFragment.setOnClickListener { safeNavigate(R.id.action_settings_to_scan) }
-        binding.buttonAuthMethod.setOnClickListener { safeNavigate(R.id.navigation_auth_method) }
-        binding.buttonDetailSetting.setOnClickListener { safeNavigate(R.id.navigation_detail_setting) }
+
+        // [수정] 2. 통합 설정 (새로 만든 버튼 ID 사용)
+        // 주의: fragment_setting.xml에 buttonUnifiedSetting ID가 있어야 오류가 나지 않습니다.
+        binding.buttonUnifiedSetting.setOnClickListener { safeNavigate(R.id.navigation_unified_setting) }
+
+        // 3. Wi-Fi 설정 (중복되지 않게 별도로 설정)
         binding.buttonWifiSetting.setOnClickListener { safeNavigate(R.id.wifiSettingFragment) }
+
+        // 4. 도움말
         binding.buttonHelp.setOnClickListener { safeNavigate(R.id.navigation_help) }
+
+        // 5. 사용자 초대
         binding.buttonInviteMember.setOnClickListener { safeNavigate(R.id.navigation_add_member) }
 
-        // [추가] 도어락 비밀번호 변경 버튼 클릭 리스너
+        // 6. 도어락 비밀번호 변경
         binding.buttonChangeDoorlockPin.setOnClickListener { safeNavigate(R.id.navigation_doorlock_password) }
     }
 
     private fun safeNavigate(destinationId: Int) {
         val navController = findNavController()
+        // 현재 위치가 설정 화면일 때만 이동 (중복 클릭 크래시 방지)
         if (navController.currentDestination?.id == R.id.navigation_settings) {
             try {
                 navController.navigate(destinationId)

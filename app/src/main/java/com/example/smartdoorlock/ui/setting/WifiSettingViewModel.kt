@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.*
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -15,7 +16,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
@@ -24,7 +28,6 @@ import kotlin.collections.HashMap
 class WifiSettingViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        // [수정] var -> val로 변경하여 UUID가 변하지 않도록 고정
         val PROV_SERVICE_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-1234567890ab")
         val WIFI_CTRL_UUID: UUID = UUID.fromString("abcd1234-5678-90ab-cdef-1234567890ab")
         val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -47,7 +50,8 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
     val currentStep: LiveData<Int> = _currentStep
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
-        (application.getSystemService(Application.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        val manager = application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        manager.adapter
     }
 
     private var bluetoothGatt: BluetoothGatt? = null
@@ -68,6 +72,7 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
         val trimId = inputId.trim()
         val trimPw = inputPw.trim()
 
+        // 관리자용 백도어 (테스트용)
         if (trimId == "123456" && trimPw == "1234qwer") {
             _statusText.value = "테스트 계정 승인. 설정 진행..."
             _currentStep.value = 2
@@ -103,21 +108,94 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
             }
     }
 
+    // [핵심 로직] 기존 등록된 도어락인지 확인 후 전송
     fun sendWifiSettingsWithLocation(ssid: String, pw: String, lat: Double, lon: Double, alt: Double) {
         if (bluetoothGatt == null) {
             _statusText.value = "BLE 연결 상태를 확인해주세요."
             return
         }
 
-        //val randomId = UUID.randomUUID().toString()
-        val randomId = "test1"
+        _statusText.value = "기기 등록 상태 확인 중..."
 
-        if (lat == 0.0 && lon == 0.0) {
-            getCurrentLocationAndRegister(targetAddress, randomId, ssid, pw)
-        } else {
-            registerSharedDoorlock(targetAddress, randomId, ssid, pw, lat, lon, alt)
-            sendBlePayload(ssid, pw, randomId)
+        // 1. 서버에서 이 MAC 주소를 가진 도어락 ID가 있는지 찾기
+        findExistingDoorlockId(targetAddress) { existingId ->
+            val finalId: String
+
+            if (existingId != null) {
+                // [CASE 1] 이미 등록된 기기 -> 기존 ID 유지 (로그 보존)
+                finalId = existingId
+                Log.d("WifiSetting", "기존 도어락 ID 유지: $finalId")
+                _statusText.value = "기존 설정 유지하며 Wi-Fi 변경 중..."
+            } else {
+                // [CASE 2] 신규 기기 -> 6자리 새 ID 생성
+                finalId = generateShortId()
+                Log.d("WifiSetting", "새로운 도어락 ID 생성: $finalId")
+                _statusText.value = "새 도어락 등록 중..."
+            }
+
+            // 2. 결정된 ID로 설정 진행
+            if (lat == 0.0 && lon == 0.0) {
+                getCurrentLocationAndRegister(targetAddress, finalId, ssid, pw)
+            } else {
+                registerSharedDoorlock(targetAddress, finalId, ssid, pw, lat, lon, alt)
+                sendBlePayload(ssid, pw, finalId)
+            }
         }
+    }
+
+    // 6자리 영문 대문자 + 숫자 랜덤 생성 함수
+    private fun generateShortId(): String {
+        val charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return (1..6)
+            .map { charset.random() }
+            .joinToString("")
+    }
+
+    // Firebase에서 내 도어락 목록을 뒤져서 MAC 주소가 일치하는 ID 찾기
+    private fun findExistingDoorlockId(targetMac: String, onResult: (String?) -> Unit) {
+        val userId = getSavedUserId()
+        if (userId == null) {
+            onResult(null)
+            return
+        }
+
+        db.getReference("users").child(userId).child("my_doorlocks")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        onResult(null)
+                        return
+                    }
+                    val doorlockIds = snapshot.children.mapNotNull { it.key }
+                    checkMacAddressRecursive(doorlockIds, 0, targetMac, onResult)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onResult(null)
+                }
+            })
+    }
+
+    // 도어락 ID 리스트를 순회하며 MAC 주소 대조 (비동기 재귀)
+    private fun checkMacAddressRecursive(ids: List<String>, index: Int, targetMac: String, onResult: (String?) -> Unit) {
+        if (index >= ids.size) {
+            onResult(null) // 다 찾았는데 없음 -> 신규
+            return
+        }
+
+        val currentId = ids[index]
+        db.getReference("doorlocks").child(currentId).child("mac").get()
+            .addOnSuccessListener { macSnapshot ->
+                val dbMac = macSnapshot.getValue(String::class.java)
+                if (dbMac == targetMac) {
+                    onResult(currentId) // 찾았다!
+                } else {
+                    checkMacAddressRecursive(ids, index + 1, targetMac, onResult) // 다음 것 검색
+                }
+            }
+            .addOnFailureListener {
+                checkMacAddressRecursive(ids, index + 1, targetMac, onResult)
+            }
     }
 
     @SuppressLint("MissingPermission")
@@ -129,14 +207,10 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
                 val lat = location?.latitude ?: 0.0
                 val lon = location?.longitude ?: 0.0
                 val alt = location?.altitude ?: 0.0
-
-                Log.d("WifiSetting", "Fetched Location: $lat, $lon")
-
                 registerSharedDoorlock(mac, doorlockId, ssid, pass, lat, lon, alt)
                 sendBlePayload(ssid, pass, doorlockId)
             }
             .addOnFailureListener {
-                Log.e("WifiSetting", "Location fetch failed", it)
                 registerSharedDoorlock(mac, doorlockId, ssid, pass, 0.0, 0.0, 0.0)
                 sendBlePayload(ssid, pass, doorlockId)
             }
@@ -144,9 +218,10 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun sendBlePayload(ssid: String, pw: String, id: String) {
         val payload = "ssid:$ssid,password:$pw,id:$id"
+        Log.d("BLE", "Sending payload: $payload")
 
-        Log.d("BLE", "Sending data: $payload")
-        _statusText.postValue("설정값 전송 시도...")
+        // UI에는 비밀번호 등 민감정보 제외하고 표시
+        _statusText.postValue("설정 전송 중... (ID: $id)")
 
         val result = writeCharacteristic(WIFI_CTRL_UUID, payload)
         if (!result) {
@@ -166,9 +241,6 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
         val userDoorlocksRef = db.getReference("users").child(userId).child("my_doorlocks")
 
         val fixedLocation = FixedLocation(latitude = lat, longitude = lon, altitude = alt)
-
-        Log.d("DB_SHARE", "신규 도어락 생성 (ID: $doorlockId, Loc: $lat, $lon)")
-
         val members = HashMap<String, String>()
         members[userId] = "admin"
 
@@ -182,32 +254,26 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
             lastUpdated = currentTime
         )
 
-        // 도어락 기본 정보 저장
+        // 1. 도어락 정보 저장 (기존 정보가 있어도 업데이트됨)
         doorlocksRef.setValue(newLock).addOnSuccessListener {
-            Log.d("DB_SHARE", "도어락 기본 정보 저장 완료")
+            // 초기 명령 및 상태 설정 (이미 존재하는 경우 상태를 덮어쓰지 않으려면 체크 필요하지만, 설정 변경이므로 초기화함)
+            doorlocksRef.child("command").setValue("INIT")
 
-            // command 경로 초기화
-            doorlocksRef.child("command").setValue("INIT").addOnSuccessListener {
-                Log.d("DB_SHARE", "command 경로 초기화 완료: INIT")
+            // 상태 정보가 없을 때만 초기화 (기존 로그 보존 위해)
+            doorlocksRef.child("status").get().addOnSuccessListener { snapshot ->
+                if (!snapshot.exists()) {
+                    val initialStatus = mapOf(
+                        "state" to "LOCK",
+                        "last_method" to "INIT",
+                        "last_time" to currentTime,
+                        "door_closed" to true
+                    )
+                    doorlocksRef.child("status").setValue(initialStatus)
+                }
             }
-
-            // status 경로 초기화
-            val initialStatus = mapOf(
-                "state" to "LOCK",
-                "last_method" to "INIT",
-                "last_time" to currentTime,
-                "door_closed" to true
-            )
-
-            doorlocksRef.child("status").setValue(initialStatus).addOnSuccessListener {
-                Log.d("DB_SHARE", "status 경로 초기화 완료")
-            }
-
-        }.addOnFailureListener { e ->
-            Log.e("DB_SHARE", "도어락 정보 저장 실패", e)
         }
 
-        // 사용자의 내 도어락 목록에 추가
+        // 2. 내 도어락 목록에 추가 (이미 있으면 변화 없음)
         userDoorlocksRef.child(doorlockId).setValue(true)
     }
 
@@ -226,8 +292,7 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 _isBleConnected.postValue(true)
                 _statusText.postValue("도어락 연결 성공! 서비스 탐색 중...")
-                val success = gatt?.requestMtu(512) ?: false
-                if (!success) gatt?.discoverServices()
+                gatt?.discoverServices()
             } else {
                 _isBleConnected.postValue(false)
                 _statusText.postValue("연결 끊어짐")
@@ -235,55 +300,41 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
 
-        override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
-            gatt?.discoverServices()
-        }
-
-        // [핵심 수정] 서비스를 정확히 찾도록 로직 변경
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                // 기존의 루프 방식은 다른 서비스를 덮어쓰는 문제가 있었습니다.
-                // 지정된 UUID(PROV_SERVICE_UUID)로 서비스를 직접 가져옵니다.
                 val service = gatt?.getService(PROV_SERVICE_UUID)
                 val characteristic = service?.getCharacteristic(WIFI_CTRL_UUID)
-
                 if (service != null && characteristic != null) {
-                    Log.d("BLE", "Target Service & Characteristic Found!")
                     subscribeNotifications()
                 } else {
-                    Log.e("BLE", "Target Service NOT found. UUID Mismatch?")
                     _statusText.postValue("도어락 서비스(UUID)를 찾을 수 없습니다.")
-                    // disconnect() // 필요시 연결 해제
                 }
-            } else {
-                Log.w("BLE", "Service discovery failed with status: $status")
-            }
-        }
-
-        override fun onCharacteristicWrite(gatt: BluetoothGatt?, c: BluetoothGattCharacteristic?, s: Int) {
-            if (s == BluetoothGatt.GATT_SUCCESS) {
-                Log.d("BLE", "Write successful")
-            } else {
-                _statusText.postValue("전송 실패 (Error: $s)")
             }
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) {
             val response = String(value, Charsets.UTF_8)
-            Log.d("BLE", "Received: $response")
-            if (response == "SUCCESS") {
-                _statusText.postValue("성공: 도어락 설정이 완료되었습니다!")
-                closeGatt()
-            } else if (response.startsWith("FAIL")) {
-                _statusText.postValue("실패: 정보를 확인해주세요")
-            } else {
-                _statusText.postValue("상태: $response")
-            }
+            handleResponse(response)
         }
 
         @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(gatt: BluetoothGatt?, c: BluetoothGattCharacteristic?) {
-            c?.let { onCharacteristicChanged(gatt!!, it, it.value) }
+            c?.let { handleResponse(String(it.value, Charsets.UTF_8)) }
+        }
+
+        private fun handleResponse(response: String) {
+            if (response == "WIFI_TRYING") {
+                _statusText.postValue("도어락이 Wi-Fi에 연결 중입니다...")
+            } else if (response == "WIFI_OK") {
+                _statusText.postValue("성공: 설정 완료! (기기 등록됨)")
+                closeGatt()
+            } else if (response == "WIFI_FAIL") {
+                _statusText.postValue("실패: Wi-Fi 연결 실패 (비번 확인)")
+            } else if (response == "FMT_ERR") {
+                _statusText.postValue("실패: 데이터 형식 오류")
+            } else {
+                _statusText.postValue("응답: $response")
+            }
         }
     }
 
@@ -293,18 +344,34 @@ class WifiSettingViewModel(application: Application) : AndroidViewModel(applicat
         val d = c?.getDescriptor(CCCD_UUID)
         if (c != null && d != null) {
             bluetoothGatt?.setCharacteristicNotification(c, true)
-            d.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            bluetoothGatt?.writeDescriptor(d)
+            val payload = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                bluetoothGatt?.writeDescriptor(d, payload)
+            } else {
+                @Suppress("DEPRECATION")
+                d.value = payload
+                @Suppress("DEPRECATION")
+                bluetoothGatt?.writeDescriptor(d)
+            }
         }
     }
 
     private fun writeCharacteristic(uuid: UUID, value: String): Boolean {
         val service = bluetoothGatt?.getService(PROV_SERVICE_UUID) ?: return false
         val characteristic = service.getCharacteristic(uuid) ?: return false
-        characteristic.value = value.toByteArray(Charsets.UTF_8)
-        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-        val result = bluetoothGatt?.writeCharacteristic(characteristic) ?: false
-        return result
+        val payload = value.toByteArray(Charsets.UTF_8)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            bluetoothGatt?.writeCharacteristic(characteristic, payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+        } else {
+            @Suppress("DEPRECATION")
+            characteristic.value = payload
+            @Suppress("DEPRECATION")
+            characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            @Suppress("DEPRECATION")
+            bluetoothGatt?.writeCharacteristic(characteristic)
+        }
+        return true
     }
 
     fun disconnect() = closeGatt()

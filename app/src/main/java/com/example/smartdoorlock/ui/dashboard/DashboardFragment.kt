@@ -219,13 +219,9 @@ class DashboardFragment : Fragment() {
             .addOnSuccessListener {
                 Log.d(TAG, "Command sent successfully: $newCommand")
 
-                // 앱 로그 기록
-                FirebaseHelper.addAppLog("원격 제어: $newCommand 명령 전송")
+                saveLogToDoorlock(newCommand)
 
-                // 버튼 다시 활성화 (실제 상태는 status 리스너가 업데이트)
                 binding.btnUnlock.isEnabled = true
-
-                // 사용자 피드백
                 val message = if (newCommand == "UNLOCK") "열림 명령 전송됨" else "잠금 명령 전송됨"
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
@@ -235,6 +231,26 @@ class DashboardFragment : Fragment() {
                 binding.btnUnlock.text = if (lastKnownState.uppercase() == "UNLOCK") "문 잠그기 🔒" else "문 열기 🔓"
                 Toast.makeText(context, "명령 전송 실패: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    // [추가된 함수] 도어락 경로에 로그 저장
+    private fun saveLogToDoorlock(command: String) {
+        if (currentDoorlockId == null) return
+
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        val user = auth.currentUser?.displayName ?: "AppUser"
+
+        // 저장 경로: doorlocks/{ID}/logs
+        val logRef = database.getReference("doorlocks").child(currentDoorlockId!!).child("logs")
+
+        val logData = mapOf(
+            "time" to timestamp,
+            "state" to command, // "UNLOCK" 또는 "LOCK"
+            "method" to "APP_REMOTE",
+            "user" to user
+        )
+
+        logRef.push().setValue(logData)
     }
 
     /**

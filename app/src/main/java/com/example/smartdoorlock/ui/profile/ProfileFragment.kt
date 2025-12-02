@@ -31,7 +31,7 @@ class ProfileFragment : Fragment() {
 
     // 멤버 리스트 어댑터
     private lateinit var memberAdapter: MemberAdapter
-    private val memberList = ArrayList<String>() // 멤버 ID 목록
+    private val memberList = ArrayList<String>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
@@ -46,11 +46,18 @@ class ProfileFragment : Fragment() {
         binding.recyclerViewMembers.layoutManager = LinearLayoutManager(context)
         binding.recyclerViewMembers.adapter = memberAdapter
 
+        // 데이터 로드
         loadUserProfile()
         checkRegisteredDeviceAndMembers()
 
+        // 클릭 리스너 설정 (새로운 ID에 맞게 연결)
+        // 1. 프로필 수정 (카메라 버튼)
         binding.btnEditProfile.setOnClickListener { safeNavigate(R.id.navigation_user_update) }
+
+        // 2. 기기 등록 (기기 없을 때 버튼)
         binding.btnConnectDevice.setOnClickListener { safeNavigate(R.id.action_profile_to_scan) }
+
+        // 3. 로그아웃 (상단 우측 설정 아이콘)
         binding.btnLogout.setOnClickListener { showLogoutConfirmationDialog() }
     }
 
@@ -61,20 +68,28 @@ class ProfileFragment : Fragment() {
 
         if (userId == null || currentUser == null) {
             binding.tvUserName.text = "게스트"
-            binding.tvUserId.text = "로그인 정보 없음"
+            binding.tvUserId.text = "로그인이 필요합니다"
             return
         }
 
+        // 이름 및 아이디 설정
         binding.tvUserName.text = currentUser.displayName ?: "사용자"
-        binding.tvUserId.text = "ID: $userId"
+        binding.tvUserId.text = "@$userId" // ID 앞에 @ 붙여서 스타일링
 
+        // 프로필 이미지 로드
         val photoUrl = currentUser.photoUrl
         if (photoUrl != null) {
-            Glide.with(this).load(photoUrl).circleCrop().into(binding.imgUserProfile)
+            Glide.with(this)
+                .load(photoUrl)
+                .centerCrop() // 이미지를 꽉 채우도록
+                .into(binding.imgUserProfile)
         } else {
+            // 기본 이미지 (배경색 흰색, 아이콘 회색)
             binding.imgUserProfile.setImageResource(android.R.drawable.sym_def_app_icon)
+            binding.imgUserProfile.setColorFilter(Color.parseColor("#CCCCCC"))
         }
 
+        // DB에서 최신 이름 가져오기 (동기화)
         database.getReference("users").child(userId).child("name").get().addOnSuccessListener {
             val name = it.getValue(String::class.java)
             if (!name.isNullOrEmpty()) binding.tvUserName.text = name
@@ -88,24 +103,34 @@ class ProfileFragment : Fragment() {
         // 1. 내 도어락 목록 확인
         database.getReference("users").child(userId).child("my_doorlocks")
             .limitToFirst(1).get().addOnSuccessListener { snapshot ->
-                if (snapshot.exists()) {
+                if (_binding == null) return@addOnSuccessListener
+
+                if (snapshot.exists() && snapshot.hasChildren()) {
+                    // 기기 있음 -> 카드 표시, 추가 버튼 숨김
                     binding.cardViewRegistered.visibility = View.VISIBLE
                     binding.btnConnectDevice.visibility = View.GONE
 
-                    val mac = snapshot.children.first().key ?: return@addOnSuccessListener
-                    binding.tvRegisteredMac.text = "MAC: $mac"
+                    val macOrId = snapshot.children.first().key ?: return@addOnSuccessListener
+
+                    // 도어락 ID로 실제 MAC 주소 가져오기 (표시용)
+                    database.getReference("doorlocks").child(macOrId).child("mac").get()
+                        .addOnSuccessListener { macSnap ->
+                            val realMac = macSnap.getValue(String::class.java) ?: macOrId
+                            binding.tvRegisteredMac.text = "ID: $realMac"
+                        }
 
                     // 2. 해당 도어락의 멤버 목록 가져오기
-                    loadDoorlockMembers(mac)
+                    loadDoorlockMembers(macOrId)
                 } else {
+                    // 기기 없음 -> 카드 숨김, 추가 버튼 표시
                     binding.cardViewRegistered.visibility = View.GONE
                     binding.btnConnectDevice.visibility = View.VISIBLE
                 }
             }
     }
 
-    private fun loadDoorlockMembers(mac: String) {
-        val membersRef = database.getReference("doorlocks").child(mac).child("members")
+    private fun loadDoorlockMembers(doorlockId: String) {
+        val membersRef = database.getReference("doorlocks").child(doorlockId).child("members")
         membersRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 memberList.clear()
@@ -113,8 +138,9 @@ class ProfileFragment : Fragment() {
                     val memberId = child.key
                     val role = child.getValue(String::class.java) // "admin" or "member"
                     if (memberId != null) {
-                        // 표시 형식: "아이디 (권한)"
-                        memberList.add("$memberId ($role)")
+                        // 관리자는 왕관 표시, 일반 멤버는 그냥 이름
+                        val displayName = if (role == "admin") "$memberId 👑" else memberId
+                        memberList.add(displayName)
                     }
                 }
                 memberAdapter.notifyDataSetChanged()
@@ -127,7 +153,7 @@ class ProfileFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("로그아웃")
             .setMessage("정말 로그아웃 하시겠습니까?")
-            .setPositiveButton("확인") { _, _ -> performLogout() }
+            .setPositiveButton("로그아웃") { _, _ -> performLogout() }
             .setNegativeButton("취소", null)
             .show()
     }
@@ -147,14 +173,13 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    // --- 내부 어댑터 클래스 ---
+    // --- 내부 어댑터 클래스 (디자인 개선) ---
     class MemberAdapter(private val members: List<String>) : RecyclerView.Adapter<MemberAdapter.ViewHolder>() {
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val tvName: TextView = view.findViewById(android.R.id.text1)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            // 안드로이드 기본 레이아웃 사용 (simple_list_item_1)
             val view = LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_1, parent, false)
             return ViewHolder(view)
         }
@@ -162,7 +187,11 @@ class ProfileFragment : Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.tvName.text = members[position]
             holder.tvName.textSize = 14f
-            holder.tvName.setTextColor(Color.parseColor("#374151"))
+            holder.tvName.setTextColor(Color.parseColor("#4B5563")) // 회색 텍스트
+            // 아이콘 추가 (선택사항)
+            holder.tvName.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_home_black_24dp, 0, 0, 0)
+            holder.tvName.compoundDrawablePadding = 24
+            holder.tvName.compoundDrawables[0]?.setTint(Color.parseColor("#9CA3AF"))
         }
 
         override fun getItemCount() = members.size
