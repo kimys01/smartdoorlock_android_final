@@ -12,7 +12,7 @@
         android:id="@+id/viewHeaderBackground"
         android:layout_width="match_parent"
         android:layout_height="240dp"
-        android:background="@drawable/gradient_actionbar_background"
+        android:background="@drawable/gradient_actionbar_background_reverse"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -44,7 +44,7 @@
         android:layout_width="match_parent"
         android:layout_height="220dp"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="60dp"
         app:cardCornerRadius="24dp"
         app:cardElevation="12dp"
         app:cardBackgroundColor="#FFFFFF"
@@ -72,11 +72,11 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:src="@android:drawable/ic_lock_idle_lock"
-                app:tint="#9E9E9E"
                 app:layout_constraintBottom_toBottomOf="@id/viewStatusIndicator"
                 app:layout_constraintEnd_toEndOf="@id/viewStatusIndicator"
                 app:layout_constraintStart_toStartOf="@id/viewStatusIndicator"
-                app:layout_constraintTop_toTopOf="@id/viewStatusIndicator" />
+                app:layout_constraintTop_toTopOf="@id/viewStatusIndicator"
+                app:tint="#9E9E9E" />
 
             <!-- 상태 텍스트 -->
             <TextView
@@ -112,7 +112,7 @@
     <!-- 컨트롤 버튼 영역 (Grid 형태) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         android:orientation="horizontal"
         android:paddingHorizontal="24dp"
         android:layout_marginTop="24dp"

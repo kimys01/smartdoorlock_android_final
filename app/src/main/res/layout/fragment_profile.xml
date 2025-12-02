@@ -7,13 +7,54 @@
     android:layout_height="match_parent"
     android:background="#F3F4F6">
 
+    <!-- 1. 상단 그라데이션 헤더 -->
     <View
         android:id="@+id/viewHeaderBackground"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:background="@drawable/gradient_actionbar_background"
+        android:layout_height="240dp"
+        android:background="@drawable/gradient_actionbar_background_reverse"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 헤더 타이틀 -->
+    <TextView
+        android:id="@+id/tvHeaderTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:text="프로필"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvHeaderSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="내 정보와 등록된 기기 관리"
+        android:textColor="#E0E0E0"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="@id/tvHeaderTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
+
+    <!-- 로그아웃 버튼 (우측 상단) -->
+    <ImageButton
+        android:id="@+id/btnLogout"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_logout_24dp"
+        app:tint="#FFFFFF"
+        android:contentDescription="로그아웃"
+        app:layout_constraintBottom_toBottomOf="@id/tvHeaderTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvHeaderTitle" />
+
+    <!-- 2. 메인 컨텐츠 (스크롤 영역) -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -23,26 +64,78 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="40dp">
+            android:paddingBottom="80dp">
 
+            <!--
+               [프로필 정보 카드]
+               - layout_marginTop을 크게 주어 헤더 아래쪽으로 내림
+            -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardUserInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="180dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="100dp"
+                    android:paddingBottom="10dp">
+
+                    <!-- paddingTop="80dp": 사진이 겹쳐질 공간 확보 -->
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="User Name"
+                        android:textColor="#1F2937"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvUserId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@user_id_123"
+                        android:textColor="#6B7280"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--
+               [프로필 사진]
+               - 카드(cardUserInfo)의 위쪽 선(Top)에 중심을 맞춤
+               - elevation을 카드보다 높게 주어 위에 뜨게 함
+            -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardProfileBorder"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:layout_marginTop="30dp"
-                app:cardCornerRadius="100dp"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                app:cardCornerRadius="70dp"
                 app:cardElevation="12dp"
                 app:cardBackgroundColor="#FFFFFF"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                app:layout_constraintBottom_toTopOf="@id/cardUserInfo"
+                app:layout_constraintTop_toTopOf="@id/cardUserInfo"
+                app:layout_constraintStart_toStartOf="@id/cardUserInfo"
+                app:layout_constraintEnd_toEndOf="@id/cardUserInfo">
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cardProfileImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="4dp"
-                    app:cardCornerRadius="100dp"
+                    app:cardCornerRadius="70dp"
                     app:cardElevation="0dp">
 
                     <ImageView
@@ -55,11 +148,12 @@
                 </androidx.cardview.widget.CardView>
             </androidx.cardview.widget.CardView>
 
+            <!-- [수정 버튼] 프로필 사진 우측 하단에 배치 -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/btnEditProfile"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                app:cardCornerRadius="18dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                app:cardCornerRadius="20dp"
                 app:cardBackgroundColor="#FFFFFF"
                 app:cardElevation="14dp"
                 android:foreground="?attr/selectableItemBackground"
@@ -78,66 +172,29 @@
                     app:tint="#2196F3"/>
             </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardUserInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="24dp"
-                android:layout_marginTop="20dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="#FFFFFF"
-                app:layout_constraintTop_toBottomOf="@id/cardProfileBorder"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:paddingVertical="20dp">
-
-                    <TextView
-                        android:id="@+id/tvUserName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="User Name"
-                        android:textColor="#1F2937"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvUserId"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="user_id_123"
-                        android:textColor="#6B7280"
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
+            <!-- 3. 내 기기 섹션 -->
             <TextView
                 android:id="@+id/tvLabelDevice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
-                android:layout_marginTop="30dp"
+                android:layout_marginTop="32dp"
                 android:text="내 기기"
-                android:textColor="#374151"
-                android:textSize="18sp"
+                android:textColor="#4B5563"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/cardUserInfo" />
 
+            <!-- 등록된 기기 카드 -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardViewRegistered"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="24dp"
                 android:layout_marginTop="12dp"
-                app:cardCornerRadius="20dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFFFFF"
                 android:visibility="visible"
@@ -159,7 +216,7 @@
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:background="@drawable/circle_background"
-                            android:padding="8dp"
+                            android:padding="10dp"
                             android:src="@drawable/ic_launcher_foreground"
                             app:tint="#2196F3" />
 
@@ -213,32 +270,36 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- 기기 없을 때 보이는 버튼 -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/btnConnectDevice"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
                 android:layout_marginHorizontal="24dp"
                 android:layout_marginTop="12dp"
-                app:cardCornerRadius="20dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#E5E7EB"
+                app:cardBackgroundColor="#FFFFFF"
                 android:visibility="gone"
                 android:foreground="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
                 app:layout_constraintTop_toBottomOf="@id/tvLabelDevice">
 
+                <!-- 스트로크 효과 (배경 drawable로 대체 가능하나 CardView 속성 활용) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:background="@drawable/edit_text_background">
+                    <!-- edit_text_background가 테두리가 있으므로 재활용 -->
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_input_add"
-                        app:tint="#6B7280"/>
+                        app:tint="#2196F3"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -246,26 +307,12 @@
                         android:text="새 기기 등록하기"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:textColor="#4B5563"
+                        android:textColor="#2196F3"
                         android:layout_marginStart="8dp"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <ImageButton
-        android:id="@+id/btnLogout"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_logout_24dp"
-        app:tint="#FFFFFF"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:elevation="10dp"
-        android:contentDescription="로그아웃" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

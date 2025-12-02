@@ -12,8 +12,8 @@
     <View
         android:id="@+id/viewHeaderBackground"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:background="@drawable/gradient_actionbar_background"
+        android:layout_height="240dp"
+        android:background="@drawable/gradient_actionbar_background_reverse"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingTop="10dp">
+            android:paddingTop="30dp">
 
             <!-- 섹션 1: 연결 관리 -->
             <TextView

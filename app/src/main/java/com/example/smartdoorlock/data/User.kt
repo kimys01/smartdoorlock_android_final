@@ -64,3 +64,9 @@ data class DoorlockLog(
     val time: String = "",
     val user: String = ""
 )
+data class NotificationItem(
+    val time: String = "",
+    val state: String = "",
+    val method: String = "",
+    val user: String = ""
+)
