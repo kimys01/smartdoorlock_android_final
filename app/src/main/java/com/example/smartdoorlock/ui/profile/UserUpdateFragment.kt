@@ -56,11 +56,6 @@ class UserUpdateFragment : Fragment() {
 
         loadUserInfo()
 
-        // 1. 뒤로가기 버튼
-        binding.btnBack.setOnClickListener {
-            findNavController().navigateUp()
-        }
-
         // 2. 사진 변경 버튼 (카메라 아이콘 or 이미지 전체)
         val imageClickListener = View.OnClickListener {
             openGallery()
