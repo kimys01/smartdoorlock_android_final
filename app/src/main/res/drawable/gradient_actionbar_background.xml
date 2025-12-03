@@ -1,23 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-파일: res/drawable/gradient_actionbar_background.xml
-목적: 타이틀 바(액션바) 전용 그라데이션 배경을 정의합니다. (둥근 모서리 없음)
--->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
+<!-- 액션바용: 오른쪽/아래에만 살짝 그림자 있는 입체 효과 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-    그라데이션을 정의합니다.
-    colors.xml의 'web_gradient_start'와 'web_gradient_end' 색상을 사용합니다.
-    -->
-    <gradient
-        android:startColor="@color/web_gradient_start"
-        android:endColor="@color/web_gradient_end"
-        android:angle="45"
-        android:type="linear" />
+    <!-- 아래·오른쪽 면 그림자 레이어 -->
+    <item
+        android:left="0dp"
+        android:top="0dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <!-- 투명 ~ 반투명 검정으로 그라데이션: 아래로 갈수록 진해짐 -->
+            <gradient
+                android:startColor="@android:color/transparent"
+                android:endColor="#33000000"
+                android:angle="90" />
+            rners android:radius="12dp"/>
+        </shape>
+    </item>
 
-    <!--
-    버튼과 달리 둥근 모서리(<corners>) 설정을 포함하지 않아,
-    기본 사각형(각진 모서리) 모양이 됩니다.
-    -->
-</shape>
+    <!-- 실제 원래 액션바 그라데이션 배경 -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/web_gradient_start"
+                android:endColor="@color/web_gradient_end"
+                android:angle="45"
+                android:type="linear" />
+            <corners android:radius="12dp"/>
+        </shape>
+    </item>
+
+</layer-list>

@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:background="#F5F5F5">
 
-    <!-- 상단 타이틀 -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -18,7 +17,6 @@
         android:background="#FFFFFF"
         android:elevation="4dp"/>
 
-    <!-- 스캔 상태 및 로딩 바 영역 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -43,32 +41,38 @@
             android:layout_marginBottom="16dp"/>
     </LinearLayout>
 
-    <!-- 스캔 시작 버튼 -->
-    <androidx.appcompat.widget.AppCompatButton
+    <androidx.cardview.widget.CardView
         android:id="@+id/btnStartScan"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="주변 도어락 검색 시작"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="16dp"
-        android:background="@drawable/gradient_button_background"/>
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
 
-    <!-- [수정됨] 하단 여백 추가 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/gradient_button_background"
+            android:gravity="center"
+            android:text="주변 도어락 검색 시작"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+    </androidx.cardview.widget.CardView>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewDevices"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:paddingHorizontal="16dp"
-
         android:paddingBottom="100dp"
         android:clipToPadding="false"
-
         android:scrollbars="vertical"/>
-    <!-- paddingBottom="100dp": 하단 바 높이만큼 여유 공간 확보 -->
-    <!-- clipToPadding="false": 스크롤할 때만 여백이 적용되도록 설정 (자연스러운 스크롤) -->
 
 </LinearLayout>

@@ -59,8 +59,7 @@
                 android:id="@+id/viewStatusIndicator"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
-                android:background="@drawable/circle_gray_background"
-                android:backgroundTint="#F3F4F6"
+                android:background="@drawable/bg_status_circle"
                 app:layout_constraintBottom_toTopOf="@id/txtStatus"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -71,12 +70,13 @@
                 android:id="@+id/imgStatusIcon"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:src="@android:drawable/ic_lock_idle_lock"
-                app:layout_constraintBottom_toBottomOf="@id/viewStatusIndicator"
-                app:layout_constraintEnd_toEndOf="@id/viewStatusIndicator"
-                app:layout_constraintStart_toStartOf="@id/viewStatusIndicator"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/ic_lock_custom"
+                app:tint="#9E9E9E"
                 app:layout_constraintTop_toTopOf="@id/viewStatusIndicator"
-                app:tint="#9E9E9E" />
+                app:layout_constraintBottom_toBottomOf="@id/viewStatusIndicator"
+                app:layout_constraintStart_toStartOf="@id/viewStatusIndicator"
+                app:layout_constraintEnd_toEndOf="@id/viewStatusIndicator"/>
 
             <!-- 상태 텍스트 -->
             <TextView
@@ -145,24 +145,24 @@
                     android:layout_height="40dp"
                     android:layout_marginBottom="12dp"
                     android:src="@drawable/ic_launcher_foreground"
-                    app:tint="#2196F3"/>
+                    app:tint="#2196F3" />
 
                 <TextView
                     android:id="@+id/tvUnlockLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="문 제어"
+                    android:textColor="#374151"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#374151"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:text="탭하여 실행"
-                    android:textSize="12sp"
                     android:textColor="#9CA3AF"
-                    android:layout_marginTop="4dp"/>
+                    android:textSize="12sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
