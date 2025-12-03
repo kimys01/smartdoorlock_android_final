@@ -16,12 +16,21 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 헤더 타이틀 -->
+
+    <!-- [추가] 전체 삭제 버튼 -->
+
+    <!-- [추가] 필터링 칩 영역 (헤더 위에 겹치게 배치하여 입체감) -->
+
+    <!-- 알림 리스트 -->
+
+    <!-- 데이터 없을 때 표시할 레이아웃 (중앙 정렬) -->
+
     <TextView
         android:id="@+id/tvHeaderTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="56dp"
         android:text="알림 센터"
         android:textColor="#FFFFFF"
         android:textSize="28sp"
@@ -29,29 +38,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- [추가] 전체 삭제 버튼 -->
-
     <TextView
         android:id="@+id/tvHeaderSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="12dp"
         android:text="도어락의 최근 활동 기록입니다"
         android:textColor="#E0E0E0"
         android:textSize="14sp"
         app:layout_constraintStart_toStartOf="@id/tvHeaderTitle"
         app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
 
-    <!-- [추가] 필터링 칩 영역 (헤더 위에 겹치게 배치하여 입체감) -->
     <HorizontalScrollView
         android:id="@+id/scrollFilters"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:paddingHorizontal="24dp"
+        android:layout_marginTop="48dp"
         android:clipToPadding="false"
+        android:paddingHorizontal="24dp"
         android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@id/tvHeaderSubtitle">
+        app:layout_constraintTop_toBottomOf="@id/tvHeaderSubtitle"
+        tools:layout_editor_absoluteX="0dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -107,21 +114,20 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- 알림 리스트 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewNotifications"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
         android:paddingHorizontal="16dp"
         android:paddingBottom="20dp"
-        android:clipToPadding="false"
         android:scrollbars="vertical"
-        app:layout_constraintTop_toBottomOf="@id/scrollFilters"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@layout/item_notification"/>
+        app:layout_constraintTop_toBottomOf="@+id/viewHeaderBackground"
+        app:layout_constraintVertical_bias="0.0"
+        tools:layout_editor_absoluteX="0dp"
+        tools:listitem="@layout/item_notification" />
 
-    <!-- 데이터 없을 때 표시할 레이아웃 (중앙 정렬) -->
     <LinearLayout
         android:id="@+id/layoutNoData"
         android:layout_width="wrap_content"
