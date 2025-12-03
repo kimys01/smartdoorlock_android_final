@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="12dp"
         android:text="환경 설정"
         android:textColor="#FFFFFF"
         android:textSize="28sp"
@@ -32,7 +32,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="14dp"
         android:text="도어락의 기능을 관리하세요"
         android:textColor="#E0E0E0"
         android:textSize="14sp"
