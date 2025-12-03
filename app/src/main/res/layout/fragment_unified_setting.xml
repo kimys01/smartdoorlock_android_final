@@ -53,19 +53,12 @@
                 android:textSize="16sp"
                 android:textColor="#000000"/>
 
-            <CheckBox
-                android:id="@+id/checkPhysical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="물리적 인증 (키패드/RFID)"
-                android:textSize="16sp"
-                android:textColor="#000000"/>
-
+            <!-- [추가됨] 앱 인증 체크박스 -->
             <CheckBox
                 android:id="@+id/checkApp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="앱 인증 (비밀번호/원격)"
+                android:text="앱 인증 (원격 제어)"
                 android:textSize="16sp"
                 android:textColor="#000000"/>
         </LinearLayout>
