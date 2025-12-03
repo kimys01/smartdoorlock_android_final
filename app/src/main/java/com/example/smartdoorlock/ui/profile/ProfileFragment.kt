@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView // [Fix] Added import for TextView
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -100,27 +100,36 @@ class ProfileFragment : Fragment() {
                             .centerCrop()
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .listener(object : RequestListener<Drawable> {
-                                // [Fix] onLoadFailed: model is Any? (Nullable)
-                                override fun onLoadFailed(
-                                    e: GlideException?,
-                                    model: Any?,
-                                    target: Target<Drawable>,
-                                    isFirstResource: Boolean
-                                ): Boolean {
-                                    if (_binding != null) binding.imgUserProfile.setColorFilter(Color.parseColor("#CCCCCC"))
-                                    return false
-                                }
+                                // [수정됨] 중복 제거 및 올바른 시그니처 (model: Any?, target: Target<Drawable>?)
 
-                                // [Fix] onResourceReady: model is Any (NonNull)
                                 override fun onResourceReady(
                                     resource: Drawable,
                                     model: Any,
-                                    target: Target<Drawable>?,
+                                    target: Target<Drawable>,
                                     dataSource: DataSource,
                                     isFirstResource: Boolean
                                 ): Boolean {
                                     if (_binding != null) binding.imgUserProfile.clearColorFilter()
                                     return false
+                                }
+
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Drawable?>,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    TODO("Not yet implemented")
+                                }
+
+                                override fun onResourceReady(
+                                    resource: Drawable,
+                                    model: Any,
+                                    target: Target<Drawable?>?,
+                                    dataSource: DataSource,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    TODO("Not yet implemented")
                                 }
                             })
                             .placeholder(android.R.drawable.sym_def_app_icon)
@@ -225,7 +234,7 @@ class ProfileFragment : Fragment() {
 
     class MemberAdapter(private val members: List<String>) : RecyclerView.Adapter<MemberAdapter.ViewHolder>() {
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val tvName: TextView = view.findViewById(android.R.id.text1) // TextView is now resolved
+            val tvName: TextView = view.findViewById(android.R.id.text1)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
