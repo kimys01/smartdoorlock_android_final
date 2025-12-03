@@ -5,7 +5,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.LayoutInflater
@@ -56,7 +58,7 @@ class UserUpdateFragment : Fragment() {
 
         loadUserInfo()
 
-        // 2. 사진 변경 버튼 (카메라 아이콘 or 이미지 전체)
+        // 2. 사진 변경 버튼
         val imageClickListener = View.OnClickListener {
             openGallery()
         }
@@ -76,16 +78,26 @@ class UserUpdateFragment : Fragment() {
 
     private fun loadUserInfo() {
         val user = auth.currentUser
+        val userId = user?.uid ?: return
+
         if (user != null) {
-            // 이름
+            // 이름 (Auth 정보 우선 표시 후 DB 확인)
             binding.etName.setText(user.displayName)
 
-            // 프로필 이미지
-            if (user.photoUrl != null) {
-                Glide.with(this)
-                    .load(user.photoUrl)
-                    .centerCrop()
-                    .into(binding.imgProfile)
+            // DB에서 최신 이름 가져오기
+            database.getReference("users").child(userId).child("name").get().addOnSuccessListener {
+                val name = it.getValue(String::class.java)
+                if (!name.isNullOrEmpty()) binding.etName.setText(name)
+            }
+
+            // 프로필 이미지 (DB 우선 확인)
+            database.getReference("users").child(userId).child("profileImage").get().addOnSuccessListener {
+                val dbImage = it.getValue(String::class.java)
+                val targetUrl = if (!dbImage.isNullOrEmpty()) Uri.parse(dbImage) else user.photoUrl
+
+                if (targetUrl != null) {
+                    Glide.with(this).load(targetUrl).centerCrop().into(binding.imgProfile)
+                }
             }
         }
     }
@@ -121,6 +133,10 @@ class UserUpdateFragment : Fragment() {
             }
         }
 
+        // 저장 중 로딩 표시 (UX)
+        binding.btnSave.isEnabled = false
+        binding.btnSave.text = "저장 중..."
+
         // 이미지가 변경된 경우 업로드 후 프로필 업데이트
         if (selectedImageUri != null) {
             uploadImageAndSaveProfile(user, newName)
@@ -133,25 +149,38 @@ class UserUpdateFragment : Fragment() {
     private fun uploadImageAndSaveProfile(user: com.google.firebase.auth.FirebaseUser, name: String) {
         val ref = storage.reference.child("profile_images/${user.uid}.jpg")
 
-        // 이미지 압축 (선택사항)
-        val bitmap = MediaStore.Images.Media.getBitmap(requireActivity().contentResolver, selectedImageUri)
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
-        val data = baos.toByteArray()
+        try {
+            // 이미지 압축 (버전 호환성 처리)
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(requireActivity().contentResolver, selectedImageUri!!))
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(requireActivity().contentResolver, selectedImageUri)
+            }
 
-        ref.putBytes(data)
-            .addOnSuccessListener {
-                ref.downloadUrl.addOnSuccessListener { uri ->
-                    saveProfileChanges(user, name, uri)
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+            val data = baos.toByteArray()
+
+            ref.putBytes(data)
+                .addOnSuccessListener {
+                    ref.downloadUrl.addOnSuccessListener { uri ->
+                        saveProfileChanges(user, name, uri)
+                    }
                 }
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "이미지 업로드 실패", Toast.LENGTH_SHORT).show()
-                saveProfileChanges(user, name, null) // 실패해도 이름은 변경 시도
-            }
+                .addOnFailureListener {
+                    Toast.makeText(context, "이미지 업로드 실패: ${it.message}", Toast.LENGTH_SHORT).show()
+                    binding.btnSave.isEnabled = true
+                    binding.btnSave.text = "저장"
+                }
+        } catch (e: Exception) {
+            Toast.makeText(context, "이미지 처리 중 오류 발생", Toast.LENGTH_SHORT).show()
+            binding.btnSave.isEnabled = true
+        }
     }
 
     private fun saveProfileChanges(user: com.google.firebase.auth.FirebaseUser, name: String, photoUri: Uri?) {
+        // 1. Firebase Auth 프로필 업데이트 (기본 정보)
         val profileUpdates = UserProfileChangeRequest.Builder()
             .setDisplayName(name)
 
@@ -162,17 +191,37 @@ class UserUpdateFragment : Fragment() {
         user.updateProfile(profileUpdates.build())
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // DB에도 이름 업데이트 (동기화)
+                    // 2. Realtime Database 업데이트 (중요!)
+                    // ProfileFragment는 이 DB 정보를 바라보고 있습니다.
                     val prefs = requireActivity().getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
                     val userId = prefs.getString("saved_id", null)
-                    if (userId != null) {
-                        database.getReference("users").child(userId).child("name").setValue(name)
-                    }
 
-                    Toast.makeText(context, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
-                    findNavController().navigateUp() // 완료 후 뒤로가기
+                    if (userId != null) {
+                        val updates = hashMapOf<String, Any>(
+                            "name" to name
+                        )
+                        // [핵심] 변경된 이미지 URL을 DB에도 저장해야 ProfileFragment에서 보입니다.
+                        if (photoUri != null) {
+                            updates["profileImage"] = photoUri.toString()
+                        }
+
+                        database.getReference("users").child(userId).updateChildren(updates)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+                                findNavController().navigateUp() // 완료 후 뒤로가기
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "DB 업데이트 실패", Toast.LENGTH_SHORT).show()
+                                binding.btnSave.isEnabled = true
+                                binding.btnSave.text = "저장"
+                            }
+                    } else {
+                        findNavController().navigateUp()
+                    }
                 } else {
-                    Toast.makeText(context, "업데이트 실패", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "업데이트 실패: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    binding.btnSave.isEnabled = true
+                    binding.btnSave.text = "저장"
                 }
             }
     }
@@ -202,8 +251,6 @@ class UserUpdateFragment : Fragment() {
 
                 prefs.edit().clear().apply()
                 Toast.makeText(context, "회원 탈퇴가 완료되었습니다.", Toast.LENGTH_SHORT).show()
-                // 로그인 화면 등으로 이동 (Global Action 사용 권장)
-                // findNavController().navigate(R.id.action_global_login)
                 activity?.finish() // 간단히 앱 종료 또는 재시작 처리
             } else {
                 Toast.makeText(context, "탈퇴 실패: ${task.exception?.message}\n(재로그인 후 시도해주세요)", Toast.LENGTH_LONG).show()

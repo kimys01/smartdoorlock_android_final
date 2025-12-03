@@ -97,7 +97,8 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusTopStart="12dp"
                         app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                        app:startIconTint="#888888">
+                        app:startIconTint="#888888"
+                        android:textColorHint="#888888">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editTextId"
@@ -120,7 +121,8 @@
                         app:boxCornerRadiusTopStart="12dp"
                         app:endIconMode="password_toggle"
                         app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
-                        app:startIconTint="#888888">
+                        app:startIconTint="#888888"
+                        android:textColorHint="#888888">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editTextPassword"
@@ -142,7 +144,8 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusTopStart="12dp"
                         app:startIconDrawable="@android:drawable/ic_menu_edit"
-                        app:startIconTint="#888888">
+                        app:startIconTint="#888888"
+                        android:textColorHint="#888888">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editTextName"
@@ -164,7 +167,8 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusTopStart="12dp"
                         app:startIconDrawable="@android:drawable/ic_menu_call"
-                        app:startIconTint="#888888">
+                        app:startIconTint="#888888"
+                        android:textColorHint="#888888">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editTextPhone"
