@@ -11,7 +11,7 @@
                 android:type="linear" />
 
             <!-- 뭉툭한 모서리 -->
-            <cornersrners android:radius="100dp" />
+            <cornersrners android:radius="10dp" />
 
             <!-- 오른쪽·아래쪽만 두껍고 살짝 어두운 테두리 -->
             <stroke

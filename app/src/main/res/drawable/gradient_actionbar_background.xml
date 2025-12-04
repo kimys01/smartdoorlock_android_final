@@ -14,7 +14,7 @@
                 android:startColor="@android:color/transparent"
                 android:endColor="#33000000"
                 android:angle="90" />
-            rners android:radius="12dp"/>
+
         </shape>
     </item>
 
@@ -26,7 +26,6 @@
                 android:endColor="@color/web_gradient_end"
                 android:angle="45"
                 android:type="linear" />
-            <corners android:radius="12dp"/>
         </shape>
     </item>
 
