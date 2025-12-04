@@ -2,6 +2,7 @@ package com.example.smartdoorlock.ui.scan
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,13 +10,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smartdoorlock.R
 
-/**
- * 블루투스 기기 스캔 결과를 RecyclerView에 표시하는 어댑터
- * [수정] 이름 없는 기기도 표시 ("이름 없음" 또는 MAC 주소로 표시)
- */
 class DeviceAdapter(
-    private val devices: List<BluetoothDevice>,
-    private val onClick: (BluetoothDevice) -> Unit
+    private val devices: List<Pair<BluetoothDevice, String>>,
+    private val onClick: (BluetoothDevice, String) -> Unit
 ) : RecyclerView.Adapter<DeviceAdapter.DeviceViewHolder>() {
 
     class DeviceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -31,22 +28,21 @@ class DeviceAdapter(
 
     @SuppressLint("MissingPermission")
     override fun onBindViewHolder(holder: DeviceViewHolder, position: Int) {
-        val device = devices[position]
+        val (device, name) = devices[position]
 
-        // [핵심 수정] 이름이 없으면 "이름 없음" 또는 MAC 주소 표시
-        val deviceName = device.name
-        if (deviceName != null && deviceName.isNotEmpty()) {
-            holder.name.text = deviceName
+        // 이름이 있으면 파란색으로 표시, 없으면 회색으로 "이름 없음" 표시
+        if (name.isNotEmpty() && name != "이름 없음") {
+            holder.name.text = name
+            holder.name.setTextColor(Color.parseColor("#2196F3")) // 파란색
         } else {
-            // 이름이 없을 때
             holder.name.text = "이름 없음"
-            holder.name.setTextColor(0xFF888888.toInt()) // 회색으로 표시
+            holder.name.setTextColor(Color.parseColor("#888888")) // 회색
         }
 
         holder.address.text = device.address
 
         holder.itemView.setOnClickListener {
-            onClick(device)
+            onClick(device, name)
         }
     }
 
