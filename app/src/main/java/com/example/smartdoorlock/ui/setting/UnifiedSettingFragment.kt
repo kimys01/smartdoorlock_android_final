@@ -20,7 +20,7 @@ class UnifiedSettingFragment : Fragment() {
     private val binding get() = _binding!!
     private val database = FirebaseDatabase.getInstance()
 
-    // 도어락 명령 전송을 위한 ID 변수 추가
+    // 도어락 명령 전송을 위한 ID 변수
     private var currentDoorlockId: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -75,13 +75,15 @@ class UnifiedSettingFragment : Fragment() {
                 binding.checkBle.isChecked = snapshot.child("ble").getValue(Boolean::class.java) ?: true
                 binding.checkUwb.isChecked = snapshot.child("uwb").getValue(Boolean::class.java) ?: true
 
-                // [수정] 앱 인증 상태 로드 (체크박스 복구)
-                binding.checkApp.isChecked = snapshot.child("app").getValue(Boolean::class.java) ?: true
+                // 앱 인증 상태 로드 (항상 켜져있음 표시)
+                binding.checkApp.isChecked = true
+                binding.checkApp.isEnabled = false // 사용자가 끌 수 없도록 비활성화
             } else {
                 // 데이터 없음 기본값
                 binding.checkBle.isChecked = true
                 binding.checkUwb.isChecked = true
                 binding.checkApp.isChecked = true
+                binding.checkApp.isEnabled = false
             }
         }
     }
@@ -94,9 +96,9 @@ class UnifiedSettingFragment : Fragment() {
         // 1. UI 상태 가져오기
         val isBleOn = binding.checkBle.isChecked
         val isUwbOn = binding.checkUwb.isChecked
-        val isAppOn = binding.checkApp.isChecked // [수정] 앱 인증 체크박스 상태 반영
+        val isAppOn = true // 앱 제어는 항상 가능
 
-        // 물리 인증(키패드/RFID)은 항상 True로 고정 (UI 없음)
+        // 물리 인증(키패드/RFID)은 항상 True로 고정
         val isPhysicalOn = true
 
         val autoLock = binding.switchAutoLock.isChecked
@@ -116,20 +118,20 @@ class UnifiedSettingFragment : Fragment() {
         userRef.child("auth_config").setValue(authConfig)
 
         // 3. 아두이노(ESP32)로 SET_AUTH 명령 전송
-        // 형식: SET_AUTH:BLE,UWB,KEYPAD,RFID (1=On, 0=Off)
-        // 아두이노 코드 상 앱 인증(WiFi)은 별도 제어가 없거나 통합 제어되므로,
-        // 여기서는 물리/통신 모듈 위주로 제어합니다. 만약 아두이노 코드에 앱 인증 제어가 없다면 이 값은 무시될 수 있습니다.
+        // [중요 수정] 하드웨어 코드(Hybrid System)에 맞춰 BLE와 UWB 2개 값만 전송합니다.
+        // 형식: SET_AUTH:1,0 (BLE=ON, UWB=OFF)
         if (currentDoorlockId != null) {
             val bleVal = if (isBleOn) "1" else "0"
             val uwbVal = if (isUwbOn) "1" else "0"
-            val keyVal = "1" // 항상 켜짐
-            val rfidVal = "1" // 항상 켜짐
 
-            // 참고: 아두이노 코드의 SET_AUTH는 BLE, UWB, Keypad, RFID 순서입니다.
-            val commandStr = "SET_AUTH:$bleVal,$uwbVal,$keyVal,$rfidVal"
+            // 앱 제어와 물리키는 하드웨어에서 항상 허용되므로 설정 명령에서 제외하거나 무시됩니다.
+            val commandStr = "SET_AUTH:$bleVal,$uwbVal"
 
             database.getReference("doorlocks").child(currentDoorlockId!!).child("command")
                 .setValue(commandStr)
+                .addOnSuccessListener {
+                    Toast.makeText(context, "설정이 도어락에 적용되었습니다.", Toast.LENGTH_SHORT).show()
+                }
         }
 
         // 4. 로그 저장
@@ -139,7 +141,7 @@ class UnifiedSettingFragment : Fragment() {
 
         userRef.child("app_logs").push().setValue(logItem)
             .addOnSuccessListener {
-                Toast.makeText(context, "설정이 저장 및 적용되었습니다.", Toast.LENGTH_SHORT).show()
+                // Toast 중복 표시 방지
             }
             .addOnFailureListener {
                 Toast.makeText(context, "저장 실패: ${it.message}", Toast.LENGTH_SHORT).show()

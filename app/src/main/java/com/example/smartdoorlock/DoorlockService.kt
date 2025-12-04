@@ -10,13 +10,12 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.app.NotificationCompat
-// [UWB 최신 라이브러리 임포트]
+// [UWB 관련 임포트 유지]
 import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.RangingResult
 import androidx.core.uwb.UwbAddress
@@ -24,6 +23,11 @@ import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.UwbComplexChannel
 import androidx.core.uwb.UwbDevice
 import androidx.core.uwb.UwbManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,11 +58,19 @@ class DoorlockService : Service() {
 
     private var isUwbSupported = false
 
+    // [추가] 사용자 설정 상태 (기본값 ON)
+    private var isBleEnabled = true
+    private var isUwbEnabled = true
+    private var isScanning = false
+
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance()
+
     companion object {
         const val NOTIFICATION_CHANNEL_ID = "DOORLOCK_SERVICE_CHANNEL"
         const val NOTIFICATION_ID = 101
         const val UWB_THRESHOLD_CM = 300.0 // 3m
-        const val RSSI_THRESHOLD = -55     // UWB 없을 때 대략적인 근접 RSSI
+        const val RSSI_THRESHOLD = -70     // 감도 조절 (-55 -> -70)
     }
 
     override fun onCreate() {
@@ -66,20 +78,49 @@ class DoorlockService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         isUwbSupported = packageManager.hasSystemFeature("android.hardware.uwb")
         Log.d("DoorLockService", "UWB 지원 여부: $isUwbSupported")
+
+        // [중요] Firebase 설정 실시간 감시 시작
+        observeUserSettings()
+    }
+
+    // [핵심] 사용자가 설정을 바꾸면 즉시 반응
+    private fun observeUserSettings() {
+        val userId = auth.currentUser?.uid ?: return
+        db.getReference("users").child(userId).child("auth_config")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    isBleEnabled = snapshot.child("ble").getValue(Boolean::class.java) ?: true
+                    isUwbEnabled = snapshot.child("uwb").getValue(Boolean::class.java) ?: true
+
+                    Log.d("DoorLockService", "설정 업데이트: BLE=$isBleEnabled, UWB=$isUwbEnabled")
+
+                    // 둘 다 꺼지면 스캔/연결 중단
+                    if (!isBleEnabled && !isUwbEnabled) {
+                        stopBleScan()
+                        disconnectGatt()
+                    } else {
+                        // 하나라도 켜지면 스캔 시작 (이미 연결 중이면 유지)
+                        if (bluetoothGatt == null && !isScanning) {
+                            startBleScan()
+                        }
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("DoorLockService", "🚀 서비스 시작 (50m 진입)")
-        startBleScan()
+        Log.d("DoorLockService", "🚀 서비스 시작")
+        // 설정 확인 후 스캔 시작
+        if (isBleEnabled || isUwbEnabled) {
+            startBleScan()
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
         Log.d("DoorLockService", "🛑 서비스 종료")
-        try {
-            bluetoothGatt?.close()
-            bluetoothGatt = null
-        } catch (e: SecurityException) {}
+        disconnectGatt()
         job.cancel()
         super.onDestroy()
     }
@@ -88,7 +129,7 @@ class DoorlockService : Service() {
 
     private fun createNotification() = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
         .setContentTitle("Smart Doorlock")
-        .setContentText("집 근처 자동 연결 중...")
+        .setContentText("자동 문 열림 대기 중...")
         .setSmallIcon(R.drawable.ic_launcher_foreground)
         .setPriority(NotificationCompat.PRIORITY_LOW)
         .setOngoing(true)
@@ -108,6 +149,8 @@ class DoorlockService : Service() {
     }
 
     private fun startBleScan() {
+        if (isScanning) return // 이미 스캔 중이면 패스
+
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val adapter = bluetoothManager.adapter ?: return
         val scanner = adapter.bluetoothLeScanner ?: return
@@ -117,17 +160,44 @@ class DoorlockService : Service() {
 
         try {
             scanner.startScan(listOf(filter), settings, bleScanCallback)
+            isScanning = true
+            Log.d("DoorLockService", "📡 스캔 시작")
         } catch (e: SecurityException) {
             Log.e("DoorLockService", "BLE 권한 없음")
         }
     }
 
+    private fun stopBleScan() {
+        if (!isScanning) return
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        try {
+            bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(bleScanCallback)
+            isScanning = false
+            Log.d("DoorLockService", "📡 스캔 중지")
+        } catch (e: SecurityException) {}
+    }
+
+    private fun disconnectGatt() {
+        try {
+            bluetoothGatt?.disconnect()
+            bluetoothGatt?.close()
+            bluetoothGatt = null
+            Log.d("DoorLockService", "🔌 연결 해제됨")
+        } catch (e: SecurityException) {}
+    }
+
     private val bleScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+            // 설정이 꺼져있으면 무시
+            if (!isBleEnabled && !isUwbEnabled) {
+                stopBleScan()
+                return
+            }
+
             Log.d("DoorLockService", "✅ 도어락 발견! 연결 시도")
             try {
-                val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-                bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(this)
+                // 연결 시도 시 스캔 중단
+                stopBleScan()
                 result.device.connectGatt(this@DoorlockService, false, gattCallback)
             } catch (e: SecurityException) {}
         }
@@ -141,17 +211,19 @@ class DoorlockService : Service() {
                 try { gatt.discoverServices() } catch (e: SecurityException) {}
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.d("DoorLockService", "❌ BLE 연결 끊김")
-                stopSelf() // 연결 끊기면 서비스 종료 (다시 50m 진입 시 켜지도록)
+                bluetoothGatt = null
+                // 연결 끊기면 다시 스캔 (설정이 켜져있을 때만)
+                if (isBleEnabled || isUwbEnabled) startBleScan()
             }
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                if (isUwbSupported) {
-                    // UWB 지원 시: 알림 켜고 주소 교환 시작
+                if (isUwbEnabled && isUwbSupported) {
+                    // UWB 지원 및 켜짐: 알림 켜고 주소 교환 시작
                     enableNotification(gatt)
-                } else {
-                    // UWB 미지원 시: RSSI 모니터링 시작
+                } else if (isBleEnabled) {
+                    // BLE만 켜짐: RSSI 모니터링 시작
                     startRssiMonitoring(gatt)
                 }
             }
@@ -167,7 +239,10 @@ class DoorlockService : Service() {
         }
 
         override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int) {
-            if (status == BluetoothGatt.GATT_SUCCESS && !isUwbSupported) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                // BLE 기능이 꺼져있으면 무시
+                if (!isBleEnabled) return
+
                 Log.d("DoorLockService", "📶 RSSI: $rssi")
                 if (rssi > RSSI_THRESHOLD) {
                     if (!isReadySent) {
@@ -225,8 +300,7 @@ class DoorlockService : Service() {
     private fun handleBleMessage(gatt: BluetoothGatt, message: String) {
         Log.d("DoorLockService", "📩 BLE 수신: $message")
 
-        // 하드웨어 응답: "UWB_IDS:0001:0002" (Out:0001, In:0002)
-        if (isUwbSupported && message.startsWith("UWB_IDS:")) {
+        if (isUwbEnabled && message.startsWith("UWB_IDS:")) {
             val parts = message.split(":")
             if (parts.size == 3) {
                 addressOutside = UwbAddress(hexStringToByteArray(parts[1]))
@@ -253,21 +327,18 @@ class DoorlockService : Service() {
 
         try {
             uwbManager = UwbManager.createInstance(this@DoorlockService)
-            uwbSession = uwbManager.controllerSessionScope() // 폰이 Controller
+            uwbSession = uwbManager.controllerSessionScope()
 
-            // 하드웨어 UWB 모듈 2개 (Controlee)
             val peerDevices = listOf(
                 UwbDevice(addressOutside!!),
                 UwbDevice(addressInside!!)
             )
 
-            // 채널 9, Preamble 10 (MK8000 기본값)
             val complexChannel = UwbComplexChannel(channel = 9, preambleIndex = 10)
 
-            // [FIX] Builder 대신 생성자 직접 사용 (alpha08 호환)
             val rangingParams = RangingParameters(
                 uwbConfigType = RangingParameters.CONFIG_UNICAST_DS_TWR,
-                sessionId = 12345, // 세션 ID
+                sessionId = 12345,
                 subSessionId = 0,
                 sessionKeyInfo = null,
                 subSessionKeyInfo = null,
@@ -281,7 +352,6 @@ class DoorlockService : Service() {
                     val distanceCm = (result.position.distance?.value ?: 0.0f) * 100
                     val deviceAddress = result.device.address
 
-                    // 모듈 구분하여 거리 저장
                     if (deviceAddress == addressOutside) distOutside = distanceCm.toDouble()
                     else if (deviceAddress == addressInside) distInside = distanceCm.toDouble()
 
@@ -296,6 +366,9 @@ class DoorlockService : Service() {
     }
 
     private fun checkAndUnlock(gatt: BluetoothGatt) {
+        // 설정 꺼져있으면 무시
+        if (!isUwbEnabled) return
+
         val outDist = distOutside ?: return
         val inDist = distInside ?: return
 
@@ -307,7 +380,6 @@ class DoorlockService : Service() {
                 Log.d("DoorLockService", "🔓 [UWB] 조건 만족 -> READY 전송")
             }
         } else {
-            // 3.5m 밖으로 나가면 리셋
             if (outDist > UWB_THRESHOLD_CM + 50) {
                 isReadySent = false
             }
